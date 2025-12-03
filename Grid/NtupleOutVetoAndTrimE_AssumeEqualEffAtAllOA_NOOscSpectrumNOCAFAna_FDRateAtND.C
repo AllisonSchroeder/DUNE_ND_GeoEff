@@ -699,8 +699,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
 
                    //====scale events to 1/validThrows (alreays have nPAssingThrows events in Etrim histos. by applying weightPmuon the muon efficiency is accounted for -> integral of Etrim histo [vtxX][detPos] = CombinedEff [vtxX]
-                   HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(1.0/validThrows * CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);
-                   HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(1.0/validThrows * CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);
+                   HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(1.0/validThrows);// * CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);
+                   HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(1.0/validThrows);// * CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);
 
                    HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Write(HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->GetName());
                    HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Write(HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->GetName());
@@ -781,7 +781,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
        }
 
        //scale the histo with FD event rate so that it has the same integral (= average combined efficiency of the event before applyin coefficients) -> want to only have the shape due to the FD event rate not the scaling as well
-       HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->Scale(HistEtrimAllVtxXTimesCoeff[i_iwritten]->Integral() /  HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->Integral());
+       if(HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->Integral()!=0)
+        HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->Scale(HistEtrimAllVtxXTimesCoeff[i_iwritten]->Integral() /  HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->Integral());
        HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->Write(HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->GetName());
        //get the oscillated spectrum: scale to Posc(Enu)
        HistEtrimAllVtxXTimesCoeffWithFDEvRateOscillated[i_iwritten] = (TH1D*) HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]->Clone();
