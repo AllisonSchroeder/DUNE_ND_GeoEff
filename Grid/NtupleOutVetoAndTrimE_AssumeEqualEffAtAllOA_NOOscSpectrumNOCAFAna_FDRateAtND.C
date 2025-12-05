@@ -189,7 +189,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   cout<<" called fdevrate fct"<<endl;
 
   // 0. FD: read event from FD MC ntuple: before earth curvature rotation
-  vector<Double_t> a_ND_off_axis_pos_vec = {0, -1.75, -2, -4, -5.75, -8, -9.75, -12, -13.75, -16, -17.75, -20, -21.75, -24, -25.75, -26.25, -28, -28.25, -28.5};
+  vector<Double_t> a_ND_off_axis_pos_vec = {0};//, -1.75, -2, -4, -5.75, -8, -9.75, -12, -13.75, -16, -17.75, -20, -21.75, -24, -25.75, -26.25, -28, -28.25, -28.5};
   vector<Double_t> a_ND_vtx_vx_vec;
   vector<Double_t> OAPosition;
   // Generate six evenly spaced point in each non-dead region (NDFV between -200cm to 200cm as in ND CAFs)
@@ -835,7 +835,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
        // cout<<" ndet pos = "<<nDetPos<<endl;
 
-       HistOAPos[i_iwritten]->Write(Form("HistOAPos_FDEvt_%d", i_iwritten));
+      // HistOAPos[i_iwritten]->Write(Form("HistOAPos_FDEvt_%d", i_iwritten));
 
        delete HistEtrimAllVtxXTimesCoeff[i_iwritten];
        delete HistEtrimAllVtxXTimesCoeffOscillated[i_iwritten];
