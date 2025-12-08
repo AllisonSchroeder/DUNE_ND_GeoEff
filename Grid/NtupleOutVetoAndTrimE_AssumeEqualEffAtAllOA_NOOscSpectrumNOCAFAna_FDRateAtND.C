@@ -840,10 +840,10 @@ void ProcessFile(TFile *fHad, TFile *fMu){
       // HistOAPos[i_iwritten]->Write(Form("HistOAPos_FDEvt_%d", i_iwritten));
 
        delete HistEtrimAllVtxXTimesCoeff[i_iwritten];
-       delete HistEtrimAllVtxXTimesCoeffOscillated[i_iwritten];
+       // delete HistEtrimAllVtxXTimesCoeffOscillated[i_iwritten];
        delete HistOAPos[i_iwritten];
        delete HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten];
-       delete HistEtrimAllVtxXTimesCoeffWithFDEvRateOscillated[i_iwritten];
+       // delete HistEtrimAllVtxXTimesCoeffWithFDEvRateOscillated[i_iwritten];
        delete SelectedEventsVsOAPosVsTotalETrim[i_iwritten];
        delete AllThrownEventsVsOAPosVsTotalETrim[i_iwritten];
 
