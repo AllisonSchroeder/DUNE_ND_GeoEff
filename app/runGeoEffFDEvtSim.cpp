@@ -105,13 +105,16 @@ int main(int argc, char** argv)
   int FD_Event; // # of the event being processed
   int FD_Sim_nNumu; // # of Sim muon neutrinos (numu and numubar)
   double FD_Gen_numu_E; // Energy of generator level neutrino [MeV]
+  double FD_Sim_numu_E; //Energt og neutrino at GEANT level
   double FD_E_vis_true; // True visible energy [MeV],  E_vis, true = LepE + eP + ePip + ePim + ePi0 + eOther + nipi0 * pi0_mass,  where pi0_mass is a constant that's 135 MeV
   double FD_LepNuAngle;                // Angle b/w nu and lepton [radians]
   double FD_W;     //Invariant mass of hadronic system [GeV]
+  double FD_True_HadE; // true HadE (not the one from deposits)
   int FD_Sim_nMu; // # of Sim muons (mu+/mu-)
   int FD_Sim_nPionCharged; // # of sim charged pions (pi+/pi-)
   int FD_Sim_nPionNeutral; // #of sim neutral pions pi0
   int FD_Sim_nP; //#of sim protons
+
 
   int FD_CCNC_truth; // 0 =CC 1 =NC
   int FD_neuPDG; // Generator level neutrino PDG
@@ -131,6 +134,7 @@ int main(int argc, char** argv)
   double FD_Sim_mu_end_pz; // Momentum of the muon trajectory at end point on the z-axis [GeV]
   double FD_Sim_mu_end_E; // Energy of leading mu at end point [GeV]
   double FD_Sim_hadronic_Edep_b2; // Total amount of energy released by ionizations in the event (from Geant4 simulation) [MeV]
+  double FD_Sim_mu_track_length; // leading muon track length
   double FD_Sim_mu_Edep_b2; // Muon energy deposit: total amount of energy released by ionizations in the event (from Geant 4 sim) [MeV]
   int FD_Sim_n_hadronic_Edep_b; // # of hadronic energy deposits
   vector<float> *FD_Sim_hadronic_hit_Edep_b2 = 0; // Need initialize 0 here to avoid error
@@ -144,6 +148,8 @@ int main(int argc, char** argv)
   t->SetBranchAddress("Event",                    &FD_Event);
   t->SetBranchAddress("Sim_nNumu",                &FD_Sim_nNumu);
   t->SetBranchAddress("Gen_numu_E",               &FD_Gen_numu_E);
+  t->SetBranchAddress("Sim_numu_E",               &FD_Sim_numu_E);
+  t->SetBranchAddress("True_HadE" ,               &FD_True_HadE);
   t->SetBranchAddress("LepNuAngle",               &FD_LepNuAngle);
   t->SetBranchAddress("W",                        &FD_W);
   t->SetBranchAddress("E_vis_true",               &FD_E_vis_true);
@@ -175,6 +181,7 @@ int main(int argc, char** argv)
   t->SetBranchAddress("Sim_hadronic_hit_y_b",     &FD_Sim_hadronic_hit_y_b);
   t->SetBranchAddress("Sim_hadronic_hit_z_b",     &FD_Sim_hadronic_hit_z_b);
   t->SetBranchAddress("Sim_mu_Edep_b2",           &FD_Sim_mu_Edep_b2);
+  t->SetBranchAddress("Sim_mu_track_length",      &FD_Sim_mu_track_length);
   //
   //------------------------------------------------------------------------------
   //------------------------------------------------------------------------------
@@ -603,6 +610,7 @@ int main(int argc, char** argv)
   float outEnergyFDatND_float;
   float totEnergyFDatND_float;
   double muonEdep;
+  double muonTrackLength;
 
   TTree *effValues = new TTree("effValues", "ND eff Tree");
   effValues->Branch("iwritten",                     &iwritten,             "iwritten/I");
@@ -613,6 +621,7 @@ int main(int argc, char** argv)
   effValues->Branch("outEnergyFDatND_f",            &outEnergyFDatND_float,            "outEnergyFDatND_float/F");
   effValues->Branch("totEnergyFDatND_f",            &totEnergyFDatND_float,            "totEnergyFDatND_float/F");
   effValues->Branch("muonEdep_f",                   &muonEdep,             "muondEDep/D");
+  effValues->Branch("muonTrackLength_f",            &muonTrackLength,      "muonTrackLength/D");
   effValues->Branch("ND_OffAxis_MeanEff",           &ND_OffAxis_MeanEff,   "ND_OffAxis_MeanEff/D");
   effValues->Branch("ThrowResults",                         &ThrowResults);
   effValues->Branch("VetoEnergyEventsPass",         &VetoEnergyEventsPass);
@@ -763,7 +772,6 @@ int main(int argc, char** argv)
     // Only pick the events' vertex inside the FD FV
     if(FD_Sim_mu_start_vx > FD_FV_max[0] || FD_Sim_mu_start_vx < FD_FV_min[0] || FD_Sim_mu_start_vy > FD_FV_max[1] || FD_Sim_mu_start_vy < FD_FV_min[1] || FD_Sim_mu_start_vz > FD_FV_max[2] || FD_Sim_mu_start_vz < FD_FV_min[2]) continue;
     FD_FV_counter++;
-
     //
     // Calculate total hadron E in FD veto region
     //
@@ -1166,7 +1174,11 @@ int main(int argc, char** argv)
         totEnergyFDatND_float = 0.;
         outEnergyFDatND_float = 0.;
         muonEdep = FD_Sim_mu_Edep_b2; //Deposited Energy of muon [MeV]
-
+        muonTrackLength = FD_Sim_mu_track_length;
+   
+        /*if (FD_Sim_mu_Edep_b2/FD_Sim_mu_track_length > 3. || FD_Sim_mu_track_length < 100.){
+           std::cout<<" **** this event is going to be cut..!! "<<" dE/dX = "<< FD_Sim_mu_Edep_b2/FD_Sim_mu_track_length << " track length = "<<FD_Sim_mu_track_length<<std:: endl;
+        }*/
         // ND_OffAxis_Sim_hadronic_hit
         for ( int ihadronhit = 0; ihadronhit < FD_Sim_n_hadronic_Edep_b; ihadronhit++ )
         {
@@ -1212,7 +1224,7 @@ int main(int argc, char** argv)
 
         // if(vetoEnergyFDatND_float > 30)
        // cout << "i_ND_off_axis_pos: " << i_ND_off_axis_pos << ", i_vtx_vx: " << i_vtx_vx << ", Ev: " << ND_Gen_numu_E << ", W: "<< ND_W << endl;
-        cout << ",------------------------ totEnergyFDatND: " << totEnergyFDatND_float << ", vetoEnergyFDatND: " << vetoEnergyFDatND_float << ", outEnergyFDatND: " << outEnergyFDatND_float << endl;
+        cout << ",------------------------ totEnergyFDatND: " << totEnergyFDatND_float<<" FD_True_hadronic_E = "<< FD_True_HadE<<" mu energy: "<<FD_Sim_mu_start_E<<" vis E = "<<ND_E_vis_true<<" Enu = "<<ND_Gen_numu_E << ", vetoEnergyFDatND: " << vetoEnergyFDatND_float << ", outEnergyFDatND: " << outEnergyFDatND_float << endl;
         vetoEnergyFDatND_vtx.emplace_back(vetoEnergyFDatND_float);
         totEnergyFDatND_vtx.emplace_back(totEnergyFDatND_float);
         outEnergyFDatND_vtx.emplace_back(outEnergyFDatND_float);
