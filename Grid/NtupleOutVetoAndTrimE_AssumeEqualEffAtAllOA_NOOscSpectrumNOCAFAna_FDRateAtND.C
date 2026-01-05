@@ -243,6 +243,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 //newlyadded
   Float_t totEnergyFDatND_f; //total hadronic energy of the event in the FD
   double muonEdep_f; //Deposited Energy of muon in the FD [MeV]
+  double muonTrackLength_f; //muon track length in cm
 
 
   vector<float> *HadronHitEdeps =0; // Hadron hit segment energy deposits [MeV]
@@ -263,6 +264,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   t_effTree->SetBranchAddress("ND_OffAxis_Sim_mu_start_E_xyz_LAr", &xyz_mom);
   t_effValues->SetBranchAddress("totEnergyFDatND_f",   &totEnergyFDatND_f);
   t_effValues->SetBranchAddress("muonEdep_f",   &muonEdep_f);
+  t_effValues->SetBranchAddress("muonTrackLength_f",   &muonTrackLength_f);
 
   double LepMomTot;
   vector<Double_t> *ND_LAr_dtctr_pos_vec = 0; // unit: cm, ND off-axis choices for each FD evt
@@ -355,9 +357,13 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
   // save histo with total hadronic energy at FD for all FD events
   TH1D* hist_FDTotEnergy = new TH1D("hist_FDTotEnergy", "hist_FDTotEnergy", 25000, 0, 25000);
+  //hist with muon energy deposit
+  TH1D* hist_muEdep = new TH1D("hist_muEdep", "hist_muEdep", 25000, 0, 25000);
+  //hist with muon track length -
+  TH1D* hist_muTrackLength = new TH1D("hist_muTrackLength", "hist_muTrackLength", 2500, 0, 50000);
   // save histo with muon energy at FD for all FD events
-  TH1D* hist_muEdepEnergy = new TH1D("hist_muEdepEnergy", "hist_muEdepEnergy", 25000, 0, 25);
-  hist_muEdepEnergy->GetXaxis()->SetTitle("LepMomTot (GeV)");
+  TH1D* hist_TotalMuEnergy = new TH1D("hist_TotalMuEnergy", "hist_TotalMuEnergy", 25000, 0, 25);
+  hist_TotalMuEnergy->GetXaxis()->SetTitle("LepMomTot (GeV)");
   //save histo with total neutrino energy at FD for all FD events
   TH1D* hist_EnuFDEnergy = new TH1D("hist_EnuFDEnergy", "hist_EnuFDEnergy", 25000, 0, 25);
   // save histo with visible neutrino energy at FD for all FD events
@@ -365,7 +371,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
   //===same histograms when osc prob is applied
   //TH1D* hist_FDTotEnergy_Osc = new TH1D("hist_FDTotEnergy_Osc", "hist_FDTotEnergy_Osc", 25000, 0, 25000);
-  //TH1D* hist_muEdepEnergy_Osc = new TH1D("hist_muEdepEnergy_Osc", "hist_muEdepEnergy_Osc",  25000, 0, 25);
+  //TH1D* hist_TotalMuEnergy_Osc = new TH1D("hist_TotalMuEnergy_Osc", "hist_TotalMuEnergy_Osc",  25000, 0, 25);
   TH1D* hist_EnuFDEnergy_Osc = new TH1D("Oschist_EnuFDEnergy", "Oschist_EnuFDEnergy", 25000, 0, 25);
   //TH1D* hist_visEnuFDEnergy_Osc = new TH1D("hist_visEnuFDEnergy_Osc", "hist_visEnuFDEnergy_Osc", 25000, 0, 25);
 
@@ -379,7 +385,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   TH2D* CoefficientsAtOAPosHist = new TH2D("CoefficientsAtOAPosHist", "CoefficientsAtOAPosHist", 67, -30.5, 3, 60, -0.3, 0.3);
 
 
-  TFile* FileWithHistoInfo = new TFile("FileWithHistEtrim_MuAndHaddEff_VisEtrim_FDEvRateAtND_NDFV4m_NoOsc_NoCoeffsApplied_2DHistosWithSelectedAndThrownEvents.root", "RECREATE");
+  TFile* FileWithHistoInfo = new TFile("FileWithHistEtrim_MuAndHaddEff_VisEtrim_FDEvRateAtND_NDFV4m_NoOsc_NoCoeffsApplied_2DHistosWithSelectedAndThrownEvents_WithCAFLikeMuCut.root", "RECREATE");
   //
   FileWithHistoInfo->cd();
 
@@ -398,6 +404,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   std::vector<std::vector<std::vector<ThrowInfo>>> AllThrowInfo;
   double MuMass = 0.1057; //GeV
 
+  double weightCAFLike[nFDEvents]; // this is going to be a weight similar to CAFs: if Edep/tracklength > 3 MeV / cm || trackLength <100 cmm then the muon is not reco -> Selected Mu =0 -> mu eff = 0;
+
   for (int i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
   { HistOAPos[i_iwritten] = new TH1D(Form("HistOAPos_FDEvt_%d", i_iwritten), Form("HistOAPos_FDEvt_%d", i_iwritten), 67, -30.5, 3);
 
@@ -415,19 +423,27 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                 EnuTrue[i_entry] = ND_Gen_numu_E;
                 LepMomTot =sqrt(pow((*xyz_mom)[0][0][0],2)+pow((*xyz_mom)[0][0][1],2)+pow((*xyz_mom)[0][0][2],2) );
                 TotalLeptonMom[i_entry] = LepMomTot;
-                hist_muEdepEnergy->Fill(LepMomTot);
+                hist_TotalMuEnergy->Fill(LepMomTot);
                 cout<<" Enu = "<<ND_Gen_numu_E<<" Evis = "<<ND_E_vis_true<<" Lep mom " <<LepMomTot<<" mu energy: "<<muonEdep_f<< endl;
                 hist_visEnuFDEnergy->Fill(ND_E_vis_true);
 		            //fill osc histos
 		            // hist_EnuFDEnergy_Osc->Fill(ND_Gen_numu_E, calc->P(14,14,ND_Gen_numu_E));
-            		//hist_muEdepEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
+            		//hist_TotalMuEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
             		//hist_visEnuFDEnergy_Osc->Fill(ND_E_vis_true, calc->P(14,14,ND_Gen_numu_E));
             }
 
             if(ND_LAr_vtx_pos == -196.45) {//only want to fill the histos for 1 vtxX
 
               hist_FDTotEnergy->Fill(totEnergyFDatND_f);
-              cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f "<<totEnergyFDatND_f<<" mu energy: "<<muonEdep_f<< " Enu = "<<ND_Gen_numu_E<<endl;
+              hist_muEdep->Fill(muonEdep_f);
+              hist_muTrackLength->Fill(muonTrackLength_f);
+              cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f "<<totEnergyFDatND_f<<" mu energy: "<<muonEdep_f<<" mu Track Length: "<<muonTrackLength_f<< " Enu = "<<ND_Gen_numu_E<<endl;
+              weightCAFLike[i_iwritten] = 1.;
+              if(muonTrackLength_f < 100. || muonEdep_f/muonTrackLength_f > 3.){
+                 cout<<"** this event will not be selected!! "<<" ev nr "<<i_iwritten<<" muon e dep: "<<muonEdep_f<<" muon track length: "<<muonTrackLength_f<<endl;
+                 weightCAFLike[i_iwritten] = 0.;
+              }
+
 
             }
 
@@ -469,7 +485,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
     for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
     {
-      cout<<" i_iwritten: "<<i_iwritten<<endl;
+      cout<<" i_iwritten: "<<i_iwritten<<" weight CAF like: "<<weightCAFLike[i_iwritten]<<endl;
 
       if(TotalLeptonMom[i_iwritten] > 20) {
         cout<<" Emu > 20 GeV, Emu = "<<TotalLeptonMom[i_iwritten]<<" not interested in so high energies, skip event " <<endl;
@@ -714,6 +730,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                    CoefficientsAtOAPosHist->Fill(OAPos, CoefficientsAtOAPos);
                    WeightEventsAtOaPos = HistOAPos[i_iwritten]->GetBinContent(HistOAPos[i_iwritten]->FindBin(OAPos));
 
+
                    for (const auto& info : throwList) {
                      // if(i_iwritten == 12 && ND_LAr_vtx_pos/100.0 >= 1.6145 &&  a_ND_off_axis_pos_vec[i_detpos-1] == 0)
                      // if(i_iwritten == 12)
@@ -725,10 +742,11 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
 
 
+
                       HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon); //*FDEvatNDRate(info.Etrim, info.Emu, OAPos)
                       HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
 
-                      SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 ,OAPos, info.weightPmuon* 1.0/WeightEventsAtOaPos * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+                      SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 ,OAPos, info.weightPmuon* 1.0/WeightEventsAtOaPos * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos) * weightCAFLike[i_iwritten]);
                       AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 , OAPos, double(validThrows)/throwList.size()* 1.0/WeightEventsAtOaPos * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
 
 
@@ -855,7 +873,9 @@ void ProcessFile(TFile *fHad, TFile *fMu){
      // CoefficientsHist->Write("CoefficientsHist");
    //  hist_FDTotEnergy->Scale(1.0/72); // we have 72 vtxX positions therefore instead of 1 event in the histo we have 72 entries
      hist_FDTotEnergy->Write("hist_FDTotEnergy");
-     hist_muEdepEnergy->Write("LepMomTot");
+     hist_muEdep->Write("hist_muEdep");
+     hist_muTrackLength->Write("hist_muTrackLength");
+     hist_TotalMuEnergy->Write("LepMomTot");
      hist_EnuFDEnergy->Write("hist_EnuFDEnergy");
      hist_visEnuFDEnergy->Write("hist_visEnuFDEnergy");
      // hist_EnuFDEnergy_Osc->Write("Oschist_EnuFDEnergy");
@@ -866,7 +886,9 @@ void ProcessFile(TFile *fHad, TFile *fMu){
      FileWithHistoInfo->Close();
 
      delete hist_FDTotEnergy;
-     delete hist_muEdepEnergy;
+     delete hist_muEdep;
+     delete hist_muTrackLength;
+     delete hist_TotalMuEnergy;
      delete hist_EnuFDEnergy;
      delete hist_visEnuFDEnergy;
      delete hist_EnuFDEnergy_Osc;
