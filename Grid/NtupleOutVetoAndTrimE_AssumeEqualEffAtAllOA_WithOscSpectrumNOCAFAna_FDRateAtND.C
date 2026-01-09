@@ -1,14 +1,3 @@
-// #include "StandardRecord/SRProxy.h"
-//
-// #include "CAFAna/Core/ModeConversionUtilities.h"
-//
-// #include "CAFAna/Cuts/TruthCuts.h"
-//
-// #include "CAFAna/Systs/XSecSystList.h"
-//
-// #include "CAFAna/PRISM/Cuts.h"
-// #include "CAFAna/PRISM/Weights.h"
-//
 #include "Calcs/Calcs.h"
 #include "OscLib/OscCalcPMNSOpt.h"
 
@@ -35,26 +24,7 @@ using namespace std;
 #include <math.h>
 #include <vector> // Need this for generate dictionary for nested vectors
 #include "Helpers.h"
-// using namespace PRISM;
-// using namespace ana;
 
-
-// template <class T>
-// bool SetBranchChecked(TTree *tr, const std::string &bname, T *dest) {
-//   static std::set<std::string> alreadyWarned;
-//
-//   if (tr->FindBranch(bname.c_str())) {
-//     tr->SetBranchAddress(bname.c_str(), dest);
-//     return true;
-//   } else {
-//     if(!alreadyWarned.count(bname)){
-//       alreadyWarned.insert(bname);
-//       std::cout << "Warning: Branch '" << bname
-//                 << "' not found, field will not be filled" << std::endl;
-//     }
-//   }
-//   return false;
-// }
 
 // Pick six evenly spaced points in each non-dead region
 vector<double> generatePoints(double start)
@@ -223,13 +193,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
   // LoadFDEventRateData("Splines_FDEventRateAtND.root");
   cout<<" called fdevrate fct"<<endl;
-  //test here
-  /*double ehad = 1.2; //had7
-  double emu = 0.9; //lep3
-  double oapos = -20;
-
-  double rate = FDEventRateAtND(ehad, emu, oapos);
-  cout<<" rate = "<<rate<<endl;*/
 
   // 0. FD: read event from FD MC ntuple: before earth curvature rotation
   vector<Double_t> a_ND_off_axis_pos_vec = {0, -1.75, -2, -4, -5.75, -8, -9.75, -12, -13.75, -16, -17.75, -20, -21.75, -24, -25.75, -26.25, -28, -28.25, -28.5};
@@ -286,12 +249,10 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 //newlyadded
   Float_t totEnergyFDatND_f; //total hadronic energy of the event in the FD
   double muonEdep_f; //Deposited Energy of muon in the FD [MeV]
+  double muonTrackLength_f; //muon track length in cm
 
 
   vector<float> *HadronHitEdeps =0; // Hadron hit segment energy deposits [MeV]
-  // vector<vector<float>> *CurrentThrowDepsX = 0; // Coordinates of hadron hits X after random throws
-  // vector<vector<float>> *CurrentThrowDepsY =0; // Coordinates of hadron hits Y after random throws
-  // vector<vector<float>> *CurrentThrowDepsZ = 0; // Coordinates of hadron hits Z after random throws
   vector<float> *CurrentThrowTotE = 0;
   vector<vector<float>> *ND_OffAxis_Sim_hadronic_hit_xyz=0; // coordinates of hadron hits before random throws
 
@@ -308,6 +269,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   t_effTree->SetBranchAddress("ND_OffAxis_Sim_mu_start_p_xyz_LAr", &xyz_mom);
   t_effValues->SetBranchAddress("totEnergyFDatND_f",   &totEnergyFDatND_f);
   t_effValues->SetBranchAddress("muonEdep_f",   &muonEdep_f);
+  t_effValues->SetBranchAddress("muonTrackLength_f",   &muonTrackLength_f);
 
   double LepMomTot;
   vector<Double_t> *ND_LAr_dtctr_pos_vec = 0; // unit: cm, ND off-axis choices for each FD evt
@@ -397,29 +359,33 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
   // save histo with total hadronic energy at FD for all FD events
   TH1D* hist_FDTotEnergy = new TH1D("hist_FDTotEnergy", "hist_FDTotEnergy", 25000, 0, 25000);
-  // save histo with muon energy at FD for all FD events
-  TH1D* hist_muEdepEnergy = new TH1D("hist_muEdepEnergy", "hist_muEdepEnergy", 25000, 0, 25);
-  hist_muEdepEnergy->GetXaxis()->SetTitle("LepMomTot (GeV)");
+  //hist with muon energy deposit
+  TH1D* hist_muEdep = new TH1D("hist_muEdep", "hist_muEdep", 25000, 0, 25000);
+  hist_muEdep->GetXaxis()->SetTitle("Muon Deposited Energy (GeV)");
+  //hist with muon track length -
+  TH1D* hist_muTrackLength = new TH1D("hist_muTrackLength", "hist_muTrackLength", 2500, 0, 50000);
+  //save histo with muon energy at FD for all FD events
+  TH1D* hist_TotalMuEnergy = new TH1D("hist_TotalMuEnergy", "hist_TotalMuEnergy", 25000, 0, 25);
+  hist_TotalMuEnergy->GetXaxis()->SetTitle("LepMomTot (GeV)");
   //save histo with total neutrino energy at FD for all FD events
   TH1D* hist_EnuFDEnergy = new TH1D("hist_EnuFDEnergy", "hist_EnuFDEnergy", 25000, 0, 25);
+  //save histo with oscillated neutrino energy spectrum at FD for all FD events
+  TH1D* hist_EnuFDEnergy_Osc = new TH1D("Oschist_EnuFDEnergy", "Oschist_EnuFDEnergy", 25000, 0, 25);
   // save histo with visible neutrino energy at FD for all FD events
   TH1D* hist_visEnuFDEnergy = new TH1D("hist_visEnuFDEnergy", "hist_visEnuFDEnergy", 25000, 0, 25);
 
-  //===same histograms when osc prob is applied
-  //TH1D* hist_FDTotEnergy_Osc = new TH1D("hist_FDTotEnergy_Osc", "hist_FDTotEnergy_Osc", 25000, 0, 25000);
-  //TH1D* hist_muEdepEnergy_Osc = new TH1D("hist_muEdepEnergy_Osc", "hist_muEdepEnergy_Osc",  25000, 0, 25);
-  TH1D* hist_EnuFDEnergy_Osc = new TH1D("Oschist_EnuFDEnergy", "Oschist_EnuFDEnergy", 25000, 0, 25);
-  //TH1D* hist_visEnuFDEnergy_Osc = new TH1D("hist_visEnuFDEnergy_Osc", "hist_visEnuFDEnergy_Osc", 25000, 0, 25);
 
   TGraph* PlotEfficiencyVsVtxX[nFDEvents];
+  // TGraph* PlotMuonEfficiencyVsVtxX[nFDEvents];
+  // TGraph* PlotMuTrackerEfficiencyVsVtxX[nFDEvents];
+  TGraph* PlotCombinedEfficiencyVsVtxX[nFDEvents];
   TGraph* EfficiencyVsOAPos[nFDEvents];
   // TH1D* HistOAPos = new TH1D("HistOAPos", "HistOAPos", 67, -30.5, 3);
   TH1D* HistOAPos[nFDEvents];
   TH2D* CoefficientsAtOAPosHist = new TH2D("CoefficientsAtOAPosHist", "CoefficientsAtOAPosHist", 67, -30.5, 3, 60, -0.3, 0.3);
 
 
-  TFile* FileWithHistoInfo = new TFile("FileWithHistEtrim_CoeffsAndOAPoswithSameEff_MuAndHaddEff_VisEtrim_WithOscProb_FDEvRateAtND_NDFV4m.root", "RECREATE");
-  //
+  TFile* FileWithHistoInfo = new TFile("FileWithHistEtrim_MuAndHaddEff_VisEtrim_WithOscProb_FDEvRateAtND_NDFV4m_2DHistosWithSelectedAndThrownEvents_WithCAFLikeMuCut.root", "RECREATE");
   FileWithHistoInfo->cd();
 
   // Or oscillated, in this case using reasonable parameters from
@@ -434,44 +400,51 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   };
 
   std::vector<std::vector<std::vector<ThrowInfo>>> AllThrowInfo;
-  double MuMass = 0.1057; //GeV
+
+  double weightCAFLike[nFDEvents]; // this is going to be a weight similar to CAFs: if Edep/tracklength > 3 MeV / cm || trackLength <100 cmm then the muon is not reco -> Selected Mu =0 -> mu eff = 0;
 
   for (int i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
   { HistOAPos[i_iwritten] = new TH1D(Form("HistOAPos_FDEvt_%d", i_iwritten), Form("HistOAPos_FDEvt_%d", i_iwritten), 67, -30.5, 3);
 
-      for (double i_ND_LAr_vtx_pos: a_ND_vtx_vx_vec)
-      {
-        int i_entry = tot_size * i_iwritten;
-        for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ )
+      int i_entry = tot_size * i_iwritten; //tot_size = nr of vtxX positions
+      cout<<" i_ entry = "<<i_entry<<endl;
+
+        for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ ) //i_entry goes from evNr*nr of vtxXpositions to nrOf vtxX positon * (evNr+1) effectively a loop over nrvtxX positions for diff events
         {
           t_effTree->GetEntry(i_entry);
           t_effValues->GetEntry(i_entry);
-          //cout<<" ND_LAr_vtx_pos " << ND_LAr_vtx_pos<<" i_ND_LAr_vtx_pos "<<i_ND_LAr_vtx_pos<<endl;
 
-          // vectND_Gen_numu_E.push_back(ND_Gen_numu_E);
-          if ( ND_LAr_vtx_pos == i_ND_LAr_vtx_pos ){
-            //cout<<"====equal"<<" i_entry = "<<i_entry<<endl;
+            //cout<<" iev = "<< i_iwritten<<"  ND_LAr_vtx_pos " << ND_LAr_vtx_pos<<" i_entry: "<<i_entry<<endl;
             if(i_entry<nFDEvents){
                 hist_EnuFDEnergy->Fill(ND_Gen_numu_E);
                 EnuTrue[i_entry] = ND_Gen_numu_E;
-                LepMomTot =sqrt(pow((*xyz_mom)[0][0][0],2)+pow((*xyz_mom)[0][0][1],2)+pow((*xyz_mom)[0][0][2],2) + pow(MuMass, 2));
+                LepMomTot =sqrt(pow((*xyz_mom)[0][0][0],2)+pow((*xyz_mom)[0][0][1],2)+pow((*xyz_mom)[0][0][2],2) );
                 TotalLeptonMom[i_entry] = LepMomTot;
-                hist_muEdepEnergy->Fill(LepMomTot);
-               // cout<<" Enu = "<<ND_Gen_numu_E<<" Lep mom " <<LepMomTot<<" total had energy "<<totEnergyFDatND_f<< " Emu with mu mass "<<sqrt(pow((*xyz_mom)[0][0][0],2)+pow((*xyz_mom)[0][0][1],2)+pow((*xyz_mom)[0][0][2],2) + pow(0.1057, 2) ) <<endl;
+                hist_TotalMuEnergy->Fill(LepMomTot);
+                cout<<" Enu = "<<ND_Gen_numu_E<<" Evis = "<<ND_E_vis_true<<" Lep mom " <<LepMomTot<<" mu energy: "<<muonEdep_f<< endl;
                 hist_visEnuFDEnergy->Fill(ND_E_vis_true);
-		//fill osc histos
-		hist_EnuFDEnergy_Osc->Fill(ND_Gen_numu_E, calc->P(14,14,ND_Gen_numu_E));
-            	//hist_muEdepEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
-            	//hist_visEnuFDEnergy_Osc->Fill(ND_E_vis_true, calc->P(14,14,ND_Gen_numu_E));
-          }
+		            //fill osc histos
+		            hist_EnuFDEnergy_Osc->Fill(ND_Gen_numu_E, calc->P(14,14,ND_Gen_numu_E));
+            		//hist_TotalMuEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
+            		//hist_visEnuFDEnergy_Osc->Fill(ND_E_vis_true, calc->P(14,14,ND_Gen_numu_E));
+            }
 
-            if(i_ND_LAr_vtx_pos == -196.45) {//only want to fill the histos for 1 vtxX
+            if(ND_LAr_vtx_pos == -196.45) {//only want to fill the histos for 1 vtxX
 
               hist_FDTotEnergy->Fill(totEnergyFDatND_f);
-              //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f "<<totEnergyFDatND_f<<" mu energy: "<<muonEdep_f<<" Enu = "<<ND_Gen_numu_E<<" Lep mom " <<LepMomTot<<" total had energy "<<totEnergyFDatND_f<< " Emu with mu mass "<<sqrt(pow((*xyz_mom)[0][0][0],2)+pow((*xyz_mom)[0][0][1],2)+pow((*xyz_mom)[0][0][2],2) + pow(0.1057, 2) )<<endl;
+              hist_muEdep->Fill(muonEdep_f);
+              hist_muTrackLength->Fill(muonTrackLength_f);
+              cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f "<<totEnergyFDatND_f<<" mu energy: "<<muonEdep_f<<" mu Track Length: "<<muonTrackLength_f<< " Enu = "<<ND_Gen_numu_E<<endl;
+              weightCAFLike[i_iwritten] = 1.;
+              if(muonTrackLength_f < 100. || muonEdep_f/muonTrackLength_f > 3.){
+                 cout<<"** this event will not be selected!! "<<" ev nr "<<i_iwritten<<" muon e dep: "<<muonEdep_f<<" muon track length: "<<muonTrackLength_f<<endl;
+                 weightCAFLike[i_iwritten] = 0.;
+              }
+
 
             }
 
+            //this is not needed anymore: i.e every events will be put in the same OA positions -> don't need this histo / event
             Int_t i_detposInCoefRange = 0;
             for (Double_t i_ND_LAr_dtctr_pos: a_ND_off_axis_pos_vec)
             {
@@ -480,10 +453,10 @@ void ProcessFile(TFile *fHad, TFile *fMu){
               OAPos2 = ND_LAr_vtx_pos/100.0 + a_ND_off_axis_pos_vec[i_detposInCoefRange-1];
               HistOAPos[i_iwritten]->Fill(OAPos2);
             }
-          }
         }
-      }
+      HistOAPos[i_iwritten]->Write(Form("HistOAPos_FDEvt_%d", i_iwritten));
     }
+
 
 
 
@@ -493,7 +466,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
     for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
     {
-      cout<<" i_iwritten: "<<i_iwritten<<endl;
+      cout<<" i_iwritten: "<<i_iwritten<<" weight CAF like: "<<weightCAFLike[i_iwritten]<<endl;
       if(TotalLeptonMom[i_iwritten] > 20) {
          cout<<" Emu > 20 GeV, Emu = "<<TotalLeptonMom[i_iwritten]<<" not interested in so high energies, skip event " <<endl;
          continue;
@@ -524,28 +497,20 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
             if ( ND_LAr_vtx_pos == i_ND_LAr_vtx_pos ){
 
-              int it_throw_x_counter =0;
-
-              int throw_couter = 0;
-
-              nPassThrowsPerEvent+=NPassedThrows;
-              if(i_vtxX_plot == 1)
+              if(i_vtxX_plot == 1){
                 nPassThrowsPerVtx[i_vtxX_plot-1] = 0;
+                nPassThrowsPerVtx[i_vtxX_plot] = nPassThrowsPerEvent;
+              }
               else
                 nPassThrowsPerVtx[i_vtxX_plot]=nPassThrowsPerEvent;
-              //
-              nPassThrowsPerVtx[1] = nPassThrowsPerEvent;
-              //cout<<" test: "<<nPassThrowsPerVtx[1]<<" passthrows per event: "<< nPassThrowsPerEvent<<endl;
 
+              // nPassThrowsPerVtx[1] = nPassThrowsPerEvent; //WRONG!!!
               int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
-              //cout<<" ND_LAr_vtx_pos "<<ND_LAr_vtx_pos<<" throws to loop " <<NPassedThrows <<endl;
 
-             // cout<<" size P "<<(*weightPmuon).size()<<endl;
               for (Int_t ithrow = 0; ithrow < nthrowsToLoop; ithrow++ ){
-		/*cout<<" ithrpws "<<ithrow<<" ivtx-1 "<<i_vtxX_plot-1<<" NPassedThrows " <<NPassedThrows <<" npass throws per event: "<<nPassThrowsPerEvent<<"  npass throwspervtx: "<<nPassThrowsPerVtx[i_vtxX_plot-1]<<"  nPassThrowsPerVtx[i_vtxX_plot-1] + ithrow+1"<<nPassThrowsPerVtx[i_vtxX_plot-1] + ithrow+1<<" weight p muon? "<< (*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0]<<endl;
-                cout<<" size P "<<(*weightPmuon).size()<<endl;*/
-                ThrowInfo info;
-                if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
+	              ThrowInfo info;
+
+              if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
                   cout<<" skipping this throw, Ehad = "<<TrimEnergyEventsPass->at(ithrow)*1E-3<<" GeV, > 20 GeV"<<endl;
                   continue;
                 }
@@ -560,30 +525,44 @@ void ProcessFile(TFile *fHad, TFile *fMu){
               } //end throw
             }// end vtx selection
           }//end ientry
-
         }//end vtx pos inside LAr
-
-
-
     }//end iwritten
 
+    TH2D* AllThrownEventsVsOAPosVsTotalETrim[nFDEvents];
+    TH2D* SelectedEventsVsOAPosVsTotalETrim[nFDEvents];
+    std::cout<<" saving 2D histos with selected and all thrown events vs Etrim+Emu vs OA Pos for same binning as in PRISM "<<std::endl;
+    //energy edges same as in CAFAna
+    std::vector<double> edges;
+    edges.emplace_back(0.);
+    edges.emplace_back(0.5);
+
+    while (edges.back() < 2.)
+        edges.emplace_back(edges.back() + 0.04);
+
+    while (edges.back() < 3.)
+        edges.emplace_back(edges.back() + 0.08);
+
+    while (edges.back() < 4.)
+        edges.emplace_back(edges.back() + 0.1);
+
+    edges.emplace_back(4.5);
+    edges.emplace_back(5.);
+    edges.emplace_back(6.);
+    edges.emplace_back(10.);
+    edges.emplace_back(120.);
+
+    // Convert for ROOT
+    int nBinsEnergy = edges.size() - 1;
+    double* EnergyEdges = edges.data();
 
 
-
-
-
-
-
-
-
-
-     for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
-     {
+    for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
+    {
        cout<<" i_iwritten: "<<i_iwritten<<endl;
        if(TotalLeptonMom[i_iwritten] > 20) {
           cout<<" Emu > 20 GeV, Emu = "<<TotalLeptonMom[i_iwritten]<<" not interested in so high energies, skip event " <<endl;
           continue;
-       } 
+       }
 
        Double_t x_ND_LAr_vtx_pos[ND_vtx_vx_vec_size];
        Double_t y_geoeff[ND_vtx_vx_vec_size];
@@ -606,6 +585,11 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
        HistEtrimAllVtxXTimesCoeff[i_iwritten] = new TH1D(HistEtrimAllVtxXTimesCoeff_name, HistEtrimAllVtxXTimesCoeff_name, 25000, 0, 25000);
        HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten] = new TH1D(HistEtrimAllVtxXTimesCoeff_FDEvRateAtND_name, HistEtrimAllVtxXTimesCoeff_FDEvRateAtND_name, 25000, 0, 25000);
+
+       TString NameAllThrownEventsVsOAPosVsTotalETrim = Form("AllThrownEventsVsOAPosVsTotalETrim_FDEvt_%d", i_iwritten);
+       AllThrownEventsVsOAPosVsTotalETrim[i_iwritten] = new TH2D(NameAllThrownEventsVsOAPosVsTotalETrim, NameAllThrownEventsVsOAPosVsTotalETrim, nBinsEnergy, EnergyEdges, 65, -30.5, 2 );
+       TString NameSelectedEventsAverageEfficiency = Form("SelectedEventsTwoDHisto_FDEvt_%d", i_iwritten);
+       SelectedEventsVsOAPosVsTotalETrim[i_iwritten] = new TH2D(NameSelectedEventsAverageEfficiency, NameSelectedEventsAverageEfficiency, nBinsEnergy, EnergyEdges, 65, -30.5, 2 );
 
        Int_t n_plot = 0;
        Int_t i_n_plot = 0;
@@ -633,14 +617,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
            TString HistEtrimPmuWeighted_namecrossCheck = Form("HistEtrimPmuWeightedCrossCheck_FDEvt_%d_vtxXpost_%f", i_iwritten, i_ND_LAr_vtx_pos);
            HistEtrimPmuWeightedCrossCheck[i_iwritten][i_vtxX_plot-1] = new TH1D(HistEtrimPmuWeighted_namecrossCheck, HistEtrimPmuWeighted_namecrossCheck, 25000, 0, 25000);
 
-           TString HistOAPosVtxX_name = Form("HistOAPosVtxX_FDEvt_%d_vtxXpost_%f", i_iwritten, i_ND_LAr_vtx_pos);
-           HistOAPosVtxX[i_iwritten][i_vtxX_plot-1] = new TH1D(HistOAPosVtxX_name, HistOAPosVtxX_name, 72, -300, 300);
-
-           // cout<<" coeff: "<<Coefficients[i_vtxX_plot-1]<<endl;
-           Int_t i_detpos_Hist=0;
-
            Int_t i_entry = tot_size * i_iwritten;
-           //cout<<" i entry: "<<i_entry<<endl;
+
            for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ )
            {
              t_effTree->GetEntry(i_entry);
@@ -653,57 +631,17 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                x_ND_LAr_vtx_pos[i_vtxX_plot-1] = ND_LAr_vtx_pos/100;
                y_geoeff[i_vtxX_plot-1] = ND_GeoEff;
                PlotEfficiencyVsVtxX[i_iwritten] = new TGraph(a_ND_vtx_vx_vec.size(), x_ND_LAr_vtx_pos, y_geoeff);
-
-
-               int it_throw_x_counter =0;
-               double averageTotalE ; //totalE at vtx_x = 7.75
-
-               int throw_couter = 0;
-
-               nPassThrowsPerEvent+=NPassedThrows;
-               if(i_vtxX_plot == 1)
-                 nPassThrowsPerVtx[i_vtxX_plot-1] = 0;
-               else
-                 nPassThrowsPerVtx[i_vtxX_plot]=nPassThrowsPerEvent;
-               //
-
+               / PlotMuonEfficiencyVsVtxX[i_iwritten] = new TGraph(a_ND_vtx_vx_vec.size(), x_ND_LAr_vtx_pos, muon_selected_eff->data());
+               // PlotMuTrackerEfficiencyVsVtxX[i_iwritten] = new TGraph(a_ND_vtx_vx_vec.size(), x_ND_LAr_vtx_pos, muon_tracker_eff->data());
+               PlotCombinedEfficiencyVsVtxX[i_iwritten] = new TGraph(a_ND_vtx_vx_vec.size(), x_ND_LAr_vtx_pos, combined_eff->data());
 
                int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
-
-
-               //
-               // for (Int_t ithrow = 0; ithrow < nthrowsToLoop; ithrow++ ){
-               //   ThrowInfo info;
-               //
-               // // cout<<"====event: "<<i_iwritten<<" vtxX: "<<i_ND_LAr_vtx_pos<<" muCont prob: "<<(*muContained)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0]
-               // //       <<" Pmu prob (cont+tracker) "<<(*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0]<<endl;
-               //
-               //   info.Etrim = TrimEnergyEventsPass->at(ithrow);  //save trimmed hadron energy per throw
-               //   info.Emu   = TotalLeptonMom[i_iwritten]*1E3;
-               //   info.weightPmuon = (*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0];
-               //
-               //
-               //   //=====here apply Pmu weight
-               //   HistEtrim[i_iwritten][i_vtxX_plot-1]->Fill(TrimEnergyEventsPass->at(ithrow));
-               //   HistEtrimPmuWeighted[i_iwritten][i_vtxX_plot-1]->Fill(TrimEnergyEventsPass->at(ithrow) + TotalLeptonMom[i_iwritten]*1E3, (*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0]);
-               //   // cout<<" fil hit : "<<TrimEnergyEventsPass->at(ithrow)<<endl;
-               //   HistEtrimAllVtxX[i_iwritten]->Fill(TrimEnergyEventsPass->at(ithrow), ND_GeoEff/(nthrowsToLoop*a_ND_vtx_vx_vec.size()));
-               //   HistEtrimPmuWeightedAllVtxX[i_iwritten]->Fill(TrimEnergyEventsPass->at(ithrow)+ TotalLeptonMom[i_iwritten]*1E3, (*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0]*ND_GeoEff/(nthrowsToLoop*a_ND_vtx_vx_vec.size()));
-               //
-               //   //cout<<" event "<<i_iwritten<<" vtxX: "<<x_ND_LAr_vtx_pos[i_vtxX_plot-1]<<" throw "<<ithrow<<" Etrim "<< TrimEnergyEventsPass->at(ithrow)<<endl;
-               //
-               //   AllThrowInfo[i_iwritten][i_vtxX_plot - 1].push_back(info);
-               //
-               //
-               // } //end throw
                const auto& throwList = AllThrowInfo[i_iwritten][i_vtxX_plot-1];
 
-
-
-               // cout<<" end of throw loop"<<endl;
-               // if(i_ND_LAr_vtx_pos == 298.55)
                PlotEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
-
+               / PlotMuonEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
+               // PlotMuTrackerEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
+               PlotCombinedEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
                //===probably will need to scale to MuEff*ND_GeoEff/nthrowsToLoop
                // HistEtrim[i_iwritten][i_vtxX_plot-1]->Scale(ND_GeoEff/nthrowsToLoop);
                // HistEtrim[i_iwritten][i_vtxX_plot-1]->GetYaxis()->SetTitle("norm");
@@ -716,16 +654,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                // HistEtrim[i_iwritten][i_vtxX_plot-1]->Draw("hist");
                //here loop over DetPos here -> for now just assume same efficiency at every det position..
                Int_t i_detpos = 0;
-               //cross checked this works properly creating same results as HistEtrimPmuWeighted[i_iwritten][i_vtxX_plot-1]
-               /*for (const auto& info : throwList) {
-                 // std::cout << "Etrim = " << info.Etrim
-                 //      << ", Emu = " << info.Emu
-                 //      << ", weightPmuon = " << info.weightPmuon
-                 //      << std::endl;
-                  HistEtrimPmuWeightedCrossCheck[i_iwritten][i_vtxX_plot-1]->Fill(info.Etrim + info.Emu , info.weightPmuon);
-               }
-               HistEtrimPmuWeightedCrossCheck[i_iwritten][i_vtxX_plot-1]->Scale(ND_GeoEff/nthrowsToLoop);*/
-
 
                for (Double_t i_ND_LAr_dtctr_pos: a_ND_off_axis_pos_vec)
                {
@@ -734,8 +662,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
                    // //calculate OAPos=vtx_x+det_pos
                    OAPos = ND_LAr_vtx_pos/100.0 + a_ND_off_axis_pos_vec[i_detpos-1];
-                   //cout<<"==== test structure "<<" event "<<i_iwritten<<" vtxX: "<<ND_LAr_vtx_pos<<" OAPOS "<<OAPos<< endl;
-
 
                    y_geoEffOAPos[iOAPostAtVtxX-1] = ND_GeoEff;
                    X_OAPos[iOAPostAtVtxX-1] = OAPos;
@@ -765,31 +691,25 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                    // HistEtrimDetPosCoeff1[i_iwritten][i_vtxX_plot-1][i_detpos-1] = (TH1D*) HistEtrim[i_iwritten][i_vtxX_plot-1]->Clone();
                    // HistEtrimDetPosCoeff1[i_iwritten][i_vtxX_plot-1][i_detpos-1]->SetName(HistEtrimDetPosCoeff1_name);
 
-
-
                    CoefficientsAtOAPos = CoefficientsHist->GetBinContent(CoefficientsHist->FindBin(OAPos));
                    CoefficientsAtOAPosHist->Fill(OAPos, CoefficientsAtOAPos);
                    WeightEventsAtOaPos = HistOAPos[i_iwritten]->GetBinContent(HistOAPos[i_iwritten]->FindBin(OAPos));
 
 
-                   //multiply histo by coefficients value and weight to the nr of entries (i.e how many Etrim histograms in a given OA pos with 0.5 cm width)
-                   //HistEtrimDetPos[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);
-
                    for (const auto& info : throwList) {
-                     // std::cout << "Etrim = " << info.Etrim
-                     //      << ", Emu = " << info.Emu
-                     //      << ", weightPmuon = " << info.weightPmuon
-                     //      << std::endl;
-                      
+
                       HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon); //*FDEvatNDRate(info.Etrim, info.Emu, OAPos)
                       HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+
+                      SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 ,OAPos, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+                      AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 , OAPos, double(validThrows)/throwList.size()* 1.0/WeightEventsAtOaPos * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
                    //   cout<<" rate "<< " Etrim " <<info.Etrim *1E-3<<" emu "<< info.Emu*1E-3<< "  OApos" <<OAPos<<" vtx x = "<<ND_LAr_vtx_pos/100.0 <<"det pos = "<<a_ND_off_axis_pos_vec[i_detpos-1] <<" rate: "<<FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos)<<" nthrowspass: "<< NPassedThrows<< " entries in histo = "<< HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->GetEntries()<<endl;
                    }
                    //cout<<" ===================="<<" iev: "<<i_iwritten<<"  OApos" <<OAPos<<" vtx x = "<<ND_LAr_vtx_pos/100.0 <<"det pos = "<<a_ND_off_axis_pos_vec[i_detpos-1] <<" nthrowspass: "<< NPassedThrows<< " valid throws : "<<validThrows<<" entries in histo = "<< HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->GetEntries()<<" integral: "<< HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Integral()<<" combined eff of this event = "<< (*combined_eff)[i_vtxX_plot-1]<<" scale factor: " << CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos<<endl;
 
                    /*if(HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Integral()!=0)
                     HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Integral()/HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Integral());*/
- 
+
                    //====scale events to desired efficiency and apply lin. comb OA coefficients
                    if(scaleToCombinedEfficiency){
                      //1. scale events so that the integral of 1 event at 1 detPos(after all random throws at all vtxX) = average combined geometric efficiency (= (*combined_eff)[i_vtxX_plot-1])
@@ -914,7 +834,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
      CoefficientsHist->Write("CoefficientsHist");
    //  hist_FDTotEnergy->Scale(1.0/72); // we have 72 vtxX positions therefore instead of 1 event in the histo we have 72 entries
      hist_FDTotEnergy->Write("hist_FDTotEnergy");
-     hist_muEdepEnergy->Write("LepMomTot");
+     hist_muEdep->Write("LepMomTot");
      hist_EnuFDEnergy->Write("hist_EnuFDEnergy");
      hist_visEnuFDEnergy->Write("hist_visEnuFDEnergy");
      hist_EnuFDEnergy_Osc->Write("Oschist_EnuFDEnergy");
@@ -925,7 +845,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
      FileWithHistoInfo->Close();
 
      delete hist_FDTotEnergy;
-     delete hist_muEdepEnergy;
+     delete hist_muEdep;
      delete hist_EnuFDEnergy;
      delete hist_visEnuFDEnergy;
      delete hist_EnuFDEnergy_Osc;
