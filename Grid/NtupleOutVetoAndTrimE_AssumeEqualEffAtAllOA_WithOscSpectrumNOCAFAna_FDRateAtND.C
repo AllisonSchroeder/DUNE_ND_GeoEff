@@ -639,7 +639,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                const auto& throwList = AllThrowInfo[i_iwritten][i_vtxX_plot-1];
 
                PlotEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
-               / PlotMuonEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
+               //PlotMuonEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
                // PlotMuTrackerEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
                PlotCombinedEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
                //===probably will need to scale to MuEff*ND_GeoEff/nthrowsToLoop
@@ -825,7 +825,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
      hist_muTrackLength->Write("hist_muTrackLength");
      hist_TotalMuEnergy->Write("LepMomTot");
      hist_EnuFDEnergy->Write("hist_EnuFDEnergy");
-     hist_visEnuFDEnergy->Write("hist_visEnuFDEnergy")
+     hist_visEnuFDEnergy->Write("hist_visEnuFDEnergy");
      hist_EnuFDEnergy_Osc->Write("Oschist_EnuFDEnergy");
 
      // HistOAPos->Draw("hist");
