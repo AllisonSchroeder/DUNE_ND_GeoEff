@@ -47,10 +47,10 @@ void EffFitFunctionCorrectEbinningSelectedEventsSplineETrue() {
   const int nTrueEbins = 67;
 
   // convert ETrue bins to TVectors to be able to write them in a tfile
-  TVectorD TrueEEdges(kTrueEEdges.size());
+  TVectorD TrueEEdges(kTrueEEdges.size()+1);
   for (size_t i = 0; i < kTrueEEdges.size(); ++i)
       TrueEEdges[i] = kTrueEEdges[i];
-
+  TrueEEdges[67] = 120;
 
   // array with number of CAF files/ det pos -> first element is very far off axis, last element is for on axis
   //fromOffaxisPOTCalc for each CAF position -> nr of entries in FileExposure_293 histogram
