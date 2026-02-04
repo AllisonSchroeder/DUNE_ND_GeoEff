@@ -352,9 +352,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   TH1D* HistEtrimAllVtxXTimesCoeffWithFDEvRate[nFDEvents];
   TH1D* HistEtrimAllVtxXTimesCoeffWithFDEvRateOscillated[nFDEvents];
 
-  TH1D* HistOAPosVtxX[nFDEvents][nvtxXpositions];
-
-
   // save histo with total hadronic energy at FD for all FD events
   TH1D* hist_FDTotEnergy = new TH1D("hist_FDTotEnergy", "hist_FDTotEnergy", 25000, 0, 25000);
   //hist with muon energy deposit
@@ -368,12 +365,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   TH1D* hist_EnuFDEnergy = new TH1D("hist_EnuFDEnergy", "hist_EnuFDEnergy", 25000, 0, 25);
   // save histo with visible neutrino energy at FD for all FD events
   TH1D* hist_visEnuFDEnergy = new TH1D("hist_visEnuFDEnergy", "hist_visEnuFDEnergy", 25000, 0, 25);
-
-  //===same histograms when osc prob is applied
-  //TH1D* hist_FDTotEnergy_Osc = new TH1D("hist_FDTotEnergy_Osc", "hist_FDTotEnergy_Osc", 25000, 0, 25000);
-  //TH1D* hist_TotalMuEnergy_Osc = new TH1D("hist_TotalMuEnergy_Osc", "hist_TotalMuEnergy_Osc",  25000, 0, 25);
   TH1D* hist_EnuFDEnergy_Osc = new TH1D("Oschist_EnuFDEnergy", "Oschist_EnuFDEnergy", 25000, 0, 25);
-  //TH1D* hist_visEnuFDEnergy_Osc = new TH1D("hist_visEnuFDEnergy_Osc", "hist_visEnuFDEnergy_Osc", 25000, 0, 25);
 
   TGraph* PlotEfficiencyVsVtxX[nFDEvents];
   // TGraph* PlotMuonEfficiencyVsVtxX[nFDEvents];
@@ -386,12 +378,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
 
   TFile* FileWithHistoInfo = new TFile("FileWithHistEtrim_MuAndHaddEff_VisEtrim_FDEvRateAtND_NDFV4m_NoOsc_NoCoeffsApplied_2DHistosWithSelectedAndThrownEvents_WithCAFLikeMuCut.root", "RECREATE");
-  //
   FileWithHistoInfo->cd();
 
-  // Or oscillated, in this case using reasonable parameters from
-  // Analysis/Calcs.h
-  // osc::IOscCalc* calc = DefaultOscCalc();
 
   // structure to save Throw information
   struct ThrowInfo {
@@ -402,7 +390,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   };
 
   std::vector<std::vector<std::vector<ThrowInfo>>> AllThrowInfo;
-  double MuMass = 0.1057; //GeV
 
   double weightCAFLike[nFDEvents]; // this is going to be a weight similar to CAFs: if Edep/tracklength > 3 MeV / cm || trackLength <100 cmm then the muon is not reco -> Selected Mu =0 -> mu eff = 0;
 
@@ -456,9 +443,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
               OAPos2 = ND_LAr_vtx_pos/100.0 + a_ND_off_axis_pos_vec[i_detposInCoefRange-1];
               HistOAPos[i_iwritten]->Fill(OAPos2);
             }
-          //}
         }
-      //}
       HistOAPos[i_iwritten]->Write(Form("HistOAPos_FDEvt_%d", i_iwritten));
     }
 
@@ -554,11 +539,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
               } //end throw
             }// end vtx selection
           }//end ientry
-
         }//end vtx pos inside LAr
-
-
-
     }//end iwritten
 
 
@@ -667,8 +648,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                PlotCombinedEfficiencyVsVtxX[i_iwritten] = new TGraph(a_ND_vtx_vx_vec.size(), x_ND_LAr_vtx_pos, combined_eff->data());
 
                int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
-
-
                const auto& throwList = AllThrowInfo[i_iwritten][i_vtxX_plot-1];
 
                PlotEfficiencyVsVtxX[i_iwritten]->SetTitle(Form("Total hadFD E = %.2f MeV, Muon E = %.2f, Enu = %.2f", totEnergyFDatND_f, TotalLeptonMom[i_iwritten], EnuTrue[i_iwritten]));
@@ -723,8 +702,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                    // TString HistEtrimDetPosCoeff1_name = Form("HistEtrimCoeff1_FDEvt_%d_vtxXpost_%f_DetPos_%f", i_iwritten, i_ND_LAr_vtx_pos, a_ND_off_axis_pos_vec[i_detpos-1] );
                    // HistEtrimDetPosCoeff1[i_iwritten][i_vtxX_plot-1][i_detpos-1] = (TH1D*) HistEtrim[i_iwritten][i_vtxX_plot-1]->Clone();
                    // HistEtrimDetPosCoeff1[i_iwritten][i_vtxX_plot-1][i_detpos-1]->SetName(HistEtrimDetPosCoeff1_name);
-
-
 
                    CoefficientsAtOAPos = CoefficientsHist->GetBinContent(CoefficientsHist->FindBin(OAPos));
                    CoefficientsAtOAPosHist->Fill(OAPos, CoefficientsAtOAPos);
