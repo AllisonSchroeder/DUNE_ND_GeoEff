@@ -424,9 +424,14 @@ void EffFitFunctionCorrectEbinningSelectedEventsSplineETrue() {
           normSpline->SetLineColor(kRed);
           normalizedSplines[Etrue_bin] = normSpline;
 
+          // TF1* f_norm = new TF1(Form("f_norm_etrue%d", Etrue_bin),
+          //     [normSpline](double* x, double*) { return normSpline->Eval(x[0]); },
+          //     xmin, xmax, 0);
           TF1* f_norm = new TF1(Form("f_norm_etrue%d", Etrue_bin),
-              [normSpline](double* x, double*) { return normSpline->Eval(x[0]); },
-              xmin, xmax, 0);
+                [normSpline](double* x, double*) {
+                  double val = normSpline->Eval(x[0]);
+                  return (val > 0.0) ? val : 0.0; },
+                xmin, xmax, 0);
           f_normalized[Etrue_bin] = f_norm;
           f_normalized[Etrue_bin]->Write();
 
