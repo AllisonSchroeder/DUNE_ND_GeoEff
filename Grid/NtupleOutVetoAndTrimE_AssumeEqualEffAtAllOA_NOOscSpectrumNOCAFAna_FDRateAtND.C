@@ -43,51 +43,88 @@ vector<double> generatePoints(double start)
   return points;
 }
 
+//define function type, i.e want LepHad or Etrue FDEventRateAtND probability
+enum class FunctionType {
+    LepHad,
+    ETrue
+};
 
 class FunctionCache {
 public:
-    std::map<std::pair<int, int>, TF1*> functionCache;
+     // (lep, had) → TF1
+    std::map<std::pair<int, int>, TF1*> functionCacheLepHad;
+    // etrue → TF1
+    std::map<int, TF1*> functionCacheETrue;
 
     TVectorT<double>* kHadBinEdges = nullptr;
     TVectorT<double>* kLepBinEdges = nullptr;
+    TVectorT<double>* kTrueBinEdges = nullptr;
 
-    void loadFunctions(const std::string& filename) {
+    FunctionType funcType;
+
+    void loadFunctions(const std::string& filename, FunctionType type) {
+        funcType = type;
+
         TFile* file = new TFile(filename.c_str(), "READ");
         if (!file->IsOpen()) {
             std::cerr << "Error opening ROOT file!" << std::endl;
             return;
         }
 
-        // Example: Load kHadBinEdges and kLepBinEdges from the file (if they exist)
-        kHadBinEdges = (TVectorT<double>*)file->Get("kHadBinEdges");
-        kLepBinEdges = (TVectorT<double>*)file->Get("kLepBinEdges");
+        if (funcType == FunctionType::LepHad) {
+          // Example: Load kHadBinEdges and kLepBinEdges from the file (if they exist)
+          kHadBinEdges = (TVectorT<double>*)file->Get("kHadBinEdges");
+          kLepBinEdges = (TVectorT<double>*)file->Get("kLepBinEdges");
 
-        cout<<" kLepBinEdge size "<<kLepBinEdges->GetNrows()<<endl;
+          cout<<" kLepBinEdge size "<<kLepBinEdges->GetNrows()<<endl;
 
-        // Loop over the possible lep and had bins, assuming you know the ranges
-        for (int lep = 1; lep <= 13; ++lep) {
+          // Loop over the possible lep and had bins, assuming you know the ranges
+          for (int lep = 1; lep <= 13; ++lep) {
             for (int had = 1; had <= 8; ++had) {
-                std::string functionName = Form("f_norm_lep%d_had%d", lep, had);
-                TF1* f_norm = (TF1*)file->Get(functionName.c_str());
-                if (f_norm) {
-                    functionCache[{lep, had}] = f_norm;
-                } else {
-                    std::cerr << "Function " << functionName << " not found in file!" << std::endl;
-                }
+              std::string functionName = Form("f_norm_lep%d_had%d", lep, had);
+              TF1* f_norm = (TF1*)file->Get(functionName.c_str());
+              if (f_norm) {
+                  functionCacheLepHad[{lep, had}] = f_norm;
+              } else {
+                  std::cerr << "Function " << functionName << " not found in file!" << std::endl;
+              }
             }
+          }
+        }
+        else if (funcType == FunctionType::ETrue) {
+          kTrueBinEdges = (TVectorT<double>*)file->Get("kTrueEBinEdges");
+
+          for (int etrue = 1; etrue <= kTrueBinEdges->GetNrows(); ++etrue) {
+            std::string functionName = Form("f_norm_etrue%d", etrue);
+            TF1* f_norm = (TF1*)file->Get(functionName.c_str());
+            if (f_norm) {
+                functionCacheETrue[etrue] = f_norm;
+            } else {
+                std::cerr << "Function " << functionName << " not found in file!" << std::endl;
+            }
+          }
         }
 
         file->Close();
     }
 
     TF1* getFunction(int lep, int had) {
-        auto it = functionCache.find({lep, had});
-        if (it != functionCache.end()) {
-            return it->second;
-        } else {
-            std::cerr << "Function for lep=" << lep << ", had=" << had << " not found in cache!" << std::endl;
-            return nullptr;
-        }
+      auto it = functionCacheLepHad.find({lep, had});
+      if (it != functionCacheLepHad.end()) {
+          return it->second;
+      } else {
+          std::cerr << "Function for lep=" << lep << ", had=" << had << " not found in cache!" << std::endl;
+          return nullptr;
+      }
+    }
+
+    TF1* getFunctionETrue(int etrue) {
+      auto it = functionCacheETrue.find(etrue);
+      if (it != functionCacheETrue.end())
+          return it->second;
+
+      std::cerr << "No function for etrue=" << etrue << std::endl;
+      return nullptr;
     }
 
     // Helper functions to determine bin based on Ehad and Emu
@@ -111,10 +148,24 @@ public:
         std::cerr << "Ehad out of range!" << std::endl;
         return -1;  // Invalid bin
     }
-};
 
+    int getTrueBin(double Etrue) {
+      for (int i = 0; i < kTrueBinEdges->GetNrows() - 1; ++i) {
+          if (Etrue >= (*kTrueBinEdges)[i] && Etrue <  (*kTrueBinEdges)[i + 1]) {
+              return i + 1;
+          }
+      }
+      std::cerr << "ETrue out of range!" << std::endl;
+      return -1;
+    }
+};
 double FDEventRateAtND(FunctionCache& cache, double Ehad, double Emu, double OAPos) {
-    // Dynamically determine lep and had bins based on Ehad and Emu
+
+    if (cache.funcType != FunctionType::LepHad) {
+        std::cerr << "ERROR: FDEventRateAtND called but cache is not LepHad!" << std::endl;
+        return 0.0;
+    }
+      // Dynamically determine lep and had bins based on Ehad and Emu
     int lepBin = cache.getLepBin(Emu);
     int hadBin = cache.getHadBin(Ehad);
 
@@ -125,15 +176,32 @@ double FDEventRateAtND(FunctionCache& cache, double Ehad, double Emu, double OAP
 
     // Retrieve the corresponding function from the cache
     TF1* f_norm = cache.getFunction(lepBin, hadBin);
-    //cout<<" in herreeeeeeee"<<f_norm->GetName()<<endl;
     if (f_norm) {
-        // Assuming f_norm->Eval takes three arguments, but adjust as needed
         return f_norm->Eval(OAPos);
-        //cout<<" name func: "<<f_norm->GetName()<<endl;
     } else {
         std::cerr << "Unable to find the corresponding function in cache." << std::endl;
         return 0;
     }
+}
+
+double FDEventRateAtND_ETrue(FunctionCache& cache, double Etrue, double OAPos) {
+    if (cache.funcType != FunctionType::ETrue) {
+        std::cerr << "ERROR: FDEventRateAtND_ETrue called but cache is not ETrue!" << std::endl;
+        return 0.0;
+    }
+    int etrueBin = cache.getTrueBin(Etrue);
+    if (etrueBin == -1) {
+        std::cerr << "Invalid Etrue bin: Etrue=" << Etrue << std::endl;
+        return 0.0;
+    }
+
+    TF1* f_norm = cache.getFunctionETrue(etrueBin);
+    if (!f_norm){
+      std::cerr << "Unable to find the corresponding function in cache." << std::endl;
+      return 0;
+    }
+
+    return f_norm->Eval(OAPos);
 }
 //Essentially a copy of SpectrumLoader::HandleFile
 void ProcessFile(TFile *fHad, TFile *fMu){
@@ -181,12 +249,12 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
   // //file storing the spline functions for the FDEventRateAtND
   // Create an instance of the cache
-  FunctionCache cache;
+  FunctionCache cacheLepHad;
+  FunctionCache cacheEtrue;
 
   // Load functions from the ROOT file (only do this once)
-  cache.loadFunctions("Splines_FDEventRateAtND.root");
-
-  cout<<" called fdevrate fct"<<endl;
+  cacheLepHad.loadFunctions("Splines_FDEventRateAtND.root", FunctionType::LepHad);
+  cacheEtrue.loadFunctions("Splines_FDEventRateAtND_ETrue.root", FunctionType::ETrue);
 
   // 0. FD: read event from FD MC ntuple: before earth curvature rotation
   vector<Double_t> a_ND_off_axis_pos_vec = {0, -1.75, -2, -4, -5.75, -8, -9.75, -12, -13.75, -16, -17.75, -20, -21.75, -24, -25.75, -26.25, -28, -28.25, -28.5};
@@ -721,10 +789,10 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
 
                       HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon); //*FDEvatNDRate(info.Etrim, info.Emu, OAPos)
-                      HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+                      HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon * FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));//FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
 
-                      SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 ,OAPos, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
-                      AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 , OAPos, double(validThrows)/throwList.size()* 1.0/WeightEventsAtOaPos * FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+                      SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 ,OAPos, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));//FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+                      AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 , OAPos, double(validThrows)/throwList.size()* 1.0/WeightEventsAtOaPos * FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));// FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
 
 
 
