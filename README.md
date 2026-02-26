@@ -1,32 +1,43 @@
-#Run Muon Efficiency code interactively on Fermi Grid (Ioana README)
+# Run Muon Efficiency code interactively on Fermi Grid (Ioana README)
 
---- my folder on the grid is at /exp/dune/app/users/icaracas/NDEff/DUNE_PRISM_GEC_ND , but one can simply clone the github code at: https://github.com/icaracas/DUNE_ND_GeoEff/tree/MuonCode
+--- my folder on the grid is at ```/exp/dune/app/users/icaracas/NDEff/DUNE_PRISM_GEC_ND``` , but one can simply clone the github code at: https://github.com/icaracas/DUNE_ND_GeoEff/tree/MuonCode
 
 
-the code for running is: code/FD_maketree.py.
-once the setups is done simply run as: python FD_maketree.py InputRootFile.root
+the code for running is: ```code/FD_maketree.py```.
+once the setups is done simply run as: ```python FD_maketree.py InputRootFile.root```
 Remark: in the current setup the InputRootFile.root that is given to the muon efficiency code is the file obtained after having run the hadron efficiency part on the ntuples
 i.e we first run hadron efficiency using the Hadron Efficiency code, we get a resulting output file containing a lot of useful info (see the hadron efficiency part for more details about this)
 and then the output file from hadron efficiency is used as an input for the muon efficiency part
 
 to setup things interactively:
-0. use the container:
-1. cd PATHToMuonEffCode: cd  /exp/dune/app/users/icaracas/NDEff/DUNE_PRISM_GEC_ND/code
-2. source the environment: setup_NDcombEff.sh
-3. setup python (can use the run_FDcombEff.sh as a guidline):
-3.1 make directory with python env: mkdir my_python_env
-3.2 then install to this directory:
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env numpy==1.26.1
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env uproot==5.1.2
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.2.17/bin/pip install --target=$(pwd)/my_python_env torch
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.2.17/bin/pip install --target=$(pwd)/my_python_env scipy==1.11.3
-4. Export PYTHONPATH
-export PYTHONPATH=$(pwd)/my_python_env:$PYTHONPATH
-5. Run With The Same Python Binary
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/python FD_maketree.py InputRootFile.root
+1. use the container: ```/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/exp,/nashome,/pnfs/dune,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest```
+   
+2. cd PATHToMuonEffCode: ```cd  /exp/dune/app/users/icaracas/NDEff/DUNE_PRISM_GEC_ND/code```
+   
+3. source the environment: ```source setup_NDcombEff.sh```
+   
+4. Setup python (you can use `run_FDcombEff.sh`, which is used for submitting jobs on Fermi computers, as a guideline):
+
+   4.1 Make directory with python env:
+   ```bash
+   mkdir my_python_env
+   ```
+
+   4.2 Then install to this directory:
+```bash
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env numpy==1.26.1```
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env uproot==5.1.2```
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env torch```
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env scipy==1.11.3```
+```
+5. Export PYTHONPATH
+```export PYTHONPATH=$(pwd)/my_python_env:$PYTHONPATH```
+
+6. Run With The Same Python Binary
+```/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/python FD_maketree.py InputRootFile.root```
 
 
-
+# Old READNE from Flyn:
 # DUNE_PRISM_GEC_ND
 DUNE-PRISM: GEC from muon side
 > - ND CAF Maker: https://internal.dunescience.org/doxygen/ND__CAFMaker_2dumpTree_8py_source.html
