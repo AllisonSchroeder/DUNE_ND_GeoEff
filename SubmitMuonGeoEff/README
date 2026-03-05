@@ -1,10 +1,15 @@
-===== HOW TO submit jobs for the Muon Geometric efficiency ===
+# HOW TO submit jobs for the Muon Geometric efficiency 
+This guide explains how to submit jobs for calculating the **Muon Geometric Efficiency**.  
+These jobs use as input the files obtained from the **Hadron Geometric Efficiency** step.
 
+---
 
-2. Muon Geometric Efficiency
-
+## 1. Muon Geometric Efficiency
 -- again here we use as input the files obtained from the Hadron Geometric Efficiency step
-2.0 make a working directory, i.e SubmitMuonEffJobs
+
+## 1.0 make a working directory, i.e SubmitMuonEffJobs
+```bash
+mkdir SubmitMuonEffJobs
 cd SubmitMuonEffJobs
 
 2.1 put in FDCAFs.txt all the existent FDOutput files obtained from hadron geom efficiency
