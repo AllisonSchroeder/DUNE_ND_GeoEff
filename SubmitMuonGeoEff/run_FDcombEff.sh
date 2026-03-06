@@ -66,6 +66,9 @@ ln -s ${INPUT_TAR_DIR_LOCAL}/muonEff30.nn .
 ln -s ${INPUT_TAR_DIR_LOCAL}/muonEffModel.py .
 #echo "Did the symlink"
 
+
+setup ifdhc
+
 # Set some other very useful environment variables for xrootd and IFDH
 export IFDH_CP_MAXRETRIES=2
 export XRD_CONNECTIONRETRY=32
