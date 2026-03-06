@@ -10,8 +10,6 @@ setup dunetpc v09_41_00_02 -q e20:prof
 echo "dunetpc is set"
 #setup root v6_28_12 -q e26:p3915:prof
 #echo " root setup"
-echo "setup root v6_28_10b -q e20:p3915:prof"
-setup root v6_28_10b -q e20:p3915:prof
 
 echo "which pip"
 which pip
