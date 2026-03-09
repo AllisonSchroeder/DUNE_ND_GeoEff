@@ -6,6 +6,10 @@ simulated muon momentum and vertex coordinates at the start and end position, ty
 
 These FD ntuples are the starting point in the Geo Efficiency of FD events at the ND.
 
+The FD events are then translated to the ND where random throws are generated and the hadron and muon geometric efficiency of a given FD event at the ND is then calculated on a data-driven approach. The last part of the code is regarding the analysis of the FD events translated to the ND, more explicitly how to translate the obtained results in terms of a PRISM-dedicated analysis. The main goal (so far) is to be able to obtain a distribution of the selected FD events in the ND that would match the linearly combined selected ND events obtained from the ND-CAFs with a model-dependent MC efficiency. To fulfill this goal a very important variable is the **energy**, as we want to make sure the same variable is comparred. Currently we use the deposited energy (obtained from GEANT 4) for the hadrons in the ND + true muon energy. For the ND-CAFs this variable is already defined within the CAFAna framework and is called ```ERec```. For the FD events in the ND this variable is further referred to as ```VisEtrim``` and is the sum between the hadronic energy deposited inside ND-LAr active volume (```TrimEnergy```) and true muon energy. 
+
+The information below tries to give an overview of the several steps used in the analysis to obtain the end-goal comparison between the FD selected events at the ND and the linearly combined selected ND events as obtained from MC NDCAFs.
+
 ## Analysis steps 
 
 In principle the working steps are the following:
