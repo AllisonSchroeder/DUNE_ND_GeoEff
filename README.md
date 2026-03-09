@@ -125,4 +125,116 @@ Take the FD event (from the ntuple) and put it in the ND:
 More variables (than the ones enumerated here) are written in the output file, but I think these are the most important ones so far. 
 
 
+## 2. Muon Geometric efficiency of FD events at the ND
+
+The code for this step can be found on the ```MuonCode``` branch of this repository: https://github.com/icaracas/DUNE_ND_GeoEff/
+  
+  - the main code of interest is in ```code/FD_maketree.py``` 
+
+The code itself is based on Flynn's previous work but has several additions / changes. However the NN part has not been touched - don't have more details regarding to how this one works..
+ ## Big picture 
+
+ This part of the code is using information obtained from the previous, hadron geometric efficiency step. The input file needed for this step is the output file obtained after having run the hadron geometric efficiency. Since in the end we are interested in events that pass both the hadron and muon selection cuts, the muon geometric efficiency is only calculated for events that have already passed the hadron geometric efficiency cut (i.e an event that doesn't pass the hadron veto cut would not be selected at the ND so it is useless to calculate the muon efficiency for such an event).  The muon geometric efficency is however following the same approach. A FD event is translated to the ND, the ND is positioned at different off-axis positions with respect to the neutrino beam, variable in this code that sets the ND position is ```LAr_position```. It is important to set the same value here as you set in the hadron geometric efficiency part. For each of the throws that pass the hadron geometric selection, for a fixed detector position we put the event at different vtx_x positions (same values for vtx_x as used in the hadron geo efficiency step). For each of these configurations of the event we use a NN that tells us whether the muon is either contained in ND-LAr or further matched int the downsream tracker, TMS. Once the NN ran we can acces the information related to : proability muon is contained in NDLAr, ```nnContained``` , probability the muon is matched in TMS, ```nnTracker``` or the combined muon selection efficiency = ```nnContained + `nnTracker``` per throw. Again since we run this code on events that have already passed the hadron selection, the results obtained from ```nnContained``` resp ```nnTracker``` are already in terms of **combined efficiecny = muon(contained or tracker) and hadron efficency** (hadron efficiency is already applied). However since in the end we care about muon probability to be either contained in ND-LAr *OR* matched in tracker, the variable of interested is `weightPmuon = nnContProb*hadresult + nnTrackerProb*hadresult` which gives us exaclty this probability. This is saved on a throw by throw basis as well and can further be used in the end analysis ( see point 3 ) 
+
+### 2.1 Read information from the root files obtained from the hadron geo eff part
+
+If for example your output file from the hadron geo eff part is called OutputHadronGeoEff.root than run the muon efficiency code as: ```python FD_maketree.py OutputHadronGeoEff.root``` . As a result you will obtain a file with information regarding the combined (hadron and muon efficiency).
+
+  - variables need as an input:
+
+    muon info: position and momentum of the muon startign point (x, y, z) `ND_OffAxis_Sim_mu_start_v_xyz_LAr`, `ND_OffAxis_Sim_mu_start_p_xyz_LAr`
+
+    throws info: result of the hadron throws (only saved for throws that pass the hadron selection cuts), `hadron_throw_result_LAr`, throws coordinates: `throwVtxY`, `throwVtxZ`, `throwRot`
+ 
+### 2.2 Get Muon momentum direction vector
+
+Need to get the corresponding coordinates of the muon direction at a givent detector position and vtx_x position inside the detector. For each neutrino events in the FD -> for each detector position -> for each vtx_x position -> for each passing throws from the hadron geo eff part:
+    #### Get variables needed to evaluate muon neural network for each throw
+   - Prepare vertex positions for each random throw:
+
+        x coordinate is fixed `this_vtx_x` and repeated for all throws (same values as in hadron geo eff). -> `throw_x`
+
+        y, z, and phi are taken from the random throws (throwsFD) and corrected by detector offsets -> `throw_y`, `throw_z`, `throw_phi`
+
+  - Determine the neutrino production point
+
+       Use the vertex x-position to estimate the neutrino decay position along the beamline.
+
+       Convert this decay position from beamline coordinates → detector coordinates.
+
+  - Build direction vectors from production point
+
+       Compute the vector from the decay point → original vertex.
+
+       Compute vectors from the decay point → each randomly thrown vertex.
+
+  - Compute rotation needed due to vertex translation
+
+       Calculate the angle between the original and translated vectors.
+
+       Compute the rotation axis using the cross product.
+
+       Convert axis + angle into a rotation vector.
+
+  - Compute additional random rotation
+
+       Apply a random φ rotation around the neutrino direction for each throw.
+
+  - Build rotation matrices
+
+       One rotation accounts for the change in neutrino direction due to vertex translation.
+
+       Another rotation accounts for the random φ rotation around that direction.
+
+  - Rotate the muon momentum
+
+       Apply the translation-induced rotation.
+
+       Apply the φ rotation.
+
+       The resulting momentum vector is used for the neural network evaluation -> `this_p`
+ 
+### 2.3 Run NN to get the probability of muon passing the muon selection cuts
+
+Give the input variables (muon momentum and throws coordinates) to the network: 
+```bash
+features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x, throw_y, throw_z))
+```
+
+Evaluate the network:
+```bash
+with torch.no_grad(): # Evaluate neural network #neural network output is 2D array of probability a set of events being contained-detected, tracker-detected,
+                        netOut=net(features) # or not detected #I don't use the 3rd column (not-detected probability)
+                        netOut=torch.nn.functional.softmax(netOut).detach().numpy
+```
+Access the result (this is on a throw by throws basis): 
+
+  -- variables: `nnContained`, `nnTracker`
+  
+  -- define probability that muon is either contained ND-LAr, or futhrer matched in downstream tracker, Pmu: 
+  ```bash
+  weightPmuon.push_back([nnContProb*hadresult + nnTrackerProb*hadresult])
+  ```
+  
+
+
+### 2.4 Save important variables in an output file
+
+Variables saved and further used in the analysis file:
+  - ```hadron_selected_eff```
+  
+  - ``` muon_tracker_eff```
+  
+  - ```muon_contained_eff```
+  
+  - ```muon_selected_eff```
+  
+  - ```combined_eff``` - this is the combined (hadron and muon selection cuts) efficiency
+
+  - ```vtxX"```
+  
+  - ```weightPmuon```
+
+
+As a result of running the muon efficiency part an output file, i.e `OutputMuonFDGeoEff.root` is created and contains the above mentioned variables.
 
