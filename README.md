@@ -23,7 +23,11 @@ More details about each individual steps:
 
 The code for this step can be found on the ```master``` branch of this repository: https://github.com/icaracas/DUNE_ND_GeoEff/
 
-  - the main code of interest is in ```app/runGeoEffFDEvtSim.cpp``` 
+  - the main code of interest is in ```app/runGeoEffFDEvtSim.cpp```
+  
+  - header with various dimensions and variables / constants definition is at ```app/Helpers.h```
+
+  - file with most of the geometric efficiency coded functions is at  ```src/geoEff.cpp```
 
 The code itself is heavily based on Flynn's previous work.
   ## Big picture 
@@ -237,4 +241,51 @@ Variables saved and further used in the analysis file:
 
 
 As a result of running the muon efficiency part an output file, i.e `OutputMuonFDGeoEff.root` is created and contains the above mentioned variables.
+
+
+## 3.  Analyse the FD events selected at the ND 
+
+The code for this step can be found on the ```EtrimAnalysis``` branch of this repository: https://github.com/icaracas/DUNE_ND_GeoEff/ . 
+
+The 2 main files of interest are: ```Grid/NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_NOOscSpectrumNOCAFAna_FDRateAtND.C``` and ```Grid/NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_WithOscSpectrumNOCAFAna_FDRateAtND.C```
+The difference between those 2 files are whether one wants to work with the oscillated spectrum or with the non-oscillated one -- codes are very similar but will try to highlight the main differences below.
+
+This part is using information obtained from the hadron geoemtric efficiency and muon geometric efficiency parts and puts it together towards the final desired distribution of selected FD events in the ND. 
+
+## Big picture
+As already mentioned, the end goal is a direct **comparison between the FD events slected at the ND (GeoEFFcorrected) and the linearly combined ND events**. The main variable of interest here is **ETrim**, which is the total amount of hadronic energy deposited by a FD event inside the active volume of the ND. Since the ND volume is smaller than the FD one, the amount of energy deposited inside the ND will be smaller. This is why we need to trim out any amount of hadronic energy that is deposited outside the active volume of the ND. This is already done in step 1 - Hadronic geometric efficiency section. Here we want to properly access this information and get our end results in terms of **selected events FD events when put in the ND as a function of the total amount of energy deposited in the ND and at a given off-axis position**. 
+
+The main idea here is that every FD event is translated to the ND, the ND is placed at different positions (in the framework so far the ND is only put on-axis and then here in the analysis we assume same efficiency at all off-axis positions), and then for each ND position we put the event in different vtx_x position inside the detector. For each of this vtx_x position we randomly translate and rotate the event and we evaluate both it's hadron efficiency (does the event pass the hadron veto cut? -- done in step 1 Hadron Geometric efficiency ) as well as the muon efficiency (for events that pass the hadron cut, what is the probability the muon would pass the selection criteria -- either contained in ND-Lar or further match in the downstream TMS -- done in step 2 Muon Geometric efficiency). 
+
+For each event that passes the hadron geometric efficiency selection (we will have many passing throws at a fixed detector position and fixes vtx_x) we have a corresponding **trim energy: `Etrim`**, a corresponding **probability that the muon passes the selection criteria: `weightPmuon`** and the corresponding **muon energy `Emu`**. (NOTE: muon energy `Emu` is the true muon energy of the event so therefore this will be the same for 1 FD event regardless where it is put in the ND. However it is still used on a throw by throw basis for consistency.) That means that taking 1 FD event, for each fixed detector position and fixed vtx_x value we have a **distribution (histogram) of Etrim values**. For this 1 FD event (fixed detector position, fixed vtx_x) the amount of entries in this Etrim histogram will be equal to the amount of passing throws (from hadron geo efficiency). Since each of the passing throws in the hadron geo efficiency has a corresponding muon probability (for muon selection) and since we want to have the distribution of events passing ALL selection criteria, each event in this histogram will further be weighted by this muon probability, `weightPmuon` . 
+
+At this point we have the `vis Etrim` (vis Etrim = Etrim + Emu is what we call "the visible trimmed energy" and is nothing else than the sum between the hadron energy deposited inside ND LAr and the muon energy) distribution of this particular FD event when translated to the ND, at a fixed vtx_x position inside the ND and fixed detector postion with respect to the neutrino beam axis. We can get such **distributions for each vtx_x and detPos** of interest. So we can then **represent this FD event in a 2D distribution, -- 2D histogram -- as a function of off-axis position ```OAPos = vtx_x + detPos``` and visible trimmed energy**  (vis Etrim = Etrim + Emu). -- i.e remember that at different vtx_x positions inside the detector we had different efficiencies and also different amount of energy deposited inside the ND-LAr active volume: more likely to deposit more energy outside the detector (so lower Etrim values) when the event is close to the ND edges. 
+
+In short, **each FD event can be mapped into the ND as a 2D distribution of off-axis position versus visible trimmed energy, capturing the geometric effects of both hadron and muon selection efficiencies**, allowing a **direct comparison between ND-observed and FD-derived events**. The last steps in the analysis is looping over all FD events (all ntuples) and summing them together in such a 2D histogram. This is the `SelectedEventsVsOAPosVsTotalETrim` histogram in the code, which is created per each event and is further summed for all events in the final (step 5) step of comparing the selected FD events with the ND linearly combined data.  
+
+Below there is a more detailed explanation of the code itself and the additional cuts (i.e CAF-like cut for low energy muons + FD EventRate at ND ) that are applied to this `SelectedEventsVsOAPosVsTotalETrim` histogram.
+
+
+### 3.1 Read information from the root files obtained from the hadron geo eff and muon geo eff part
+
+The code is run using both the hadron geo eff and muon geo eff output files. i.e assuming you have ` OutputHadronGeoEff.root` from hadron and `OutputMuonFDGeoEff.root` from muon, you would run:
+
+-- for no oscillations
+```bash
+./NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_NOOscSpectrumNOCAFAna_FDRateAtND OutputHadronGeoEff.root OutputMuonFDGeoEff.root
+```
+-- for oscillations
+```bash
+./NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_WithOscSpectrumNOCAFAna_FDRateAtND OutputHadronGeoEff.root OutputMuonFDGeoEff.root
+```
+TO Be Continued 
+
+Since we also have access to the total number of throws (```validThrows```) per event / per vtx_x we can easily scale the histogram to the number of ```validThrows``` in order to have the integral of this histogram equal to the corresponding efficiency of this particular FD event when translated to the ND, when the detector is positioned at a given detPos, at a given vtx_x value inside the ND.
+
+The idea would be that once we put the FD event at different configurations in the ND and once we have
+
+
+In order to ensure the correct **same conditions** for our FD events when put in the ND, several steps are used in this analysis section. 
+
+(access Etrim histograms of each passing throw from hadron geo Eff, weight them by the probability the event passes the muon cuts, Pmu(Emu,throws)
 
