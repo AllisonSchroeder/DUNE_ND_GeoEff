@@ -315,9 +315,54 @@ NOTE: if in the future one chooses to not assume equal efficiency at all detecto
    - `EnuTrue` -- variable where we save the true neutrino energy / FD Event
    - `TotalLeptonMom` -- variable with muon total energy / FD Event
 
-- Functions used in the code:
+### FD Event Rate at ND Functions (Try to use Ehad - Elep to avoid model dependence):
 
-  As mentioned above, we have to account for the FD event rate at the ND. This is related to the fact that neutrinos with a given true energy have different probabilities of appearing at a different off-axis position in the ND. Take for example a very low energy neutrino: this 
+As mentioned above, we have to account for the FD event rate at the ND. Since we take the FD events and put them in the ND, at different off-axis positions, we have to account for this rate. This is related to the fact that neutrinos with a given true energy have different probabilities of appearing at a different off-axis position in the ND. Take for example a very low energy neutrino: this would have a much higher chance to appear from somewhere far off-axis than from the on-axis (left figure below). Similarly an event with a high neutrino energy will have a much higher probability to appear from an on-axis ND then from very far off-axis (right side figure below) -- remember the further we go off-axis with the ND the sampled neutrino spectra peaks at lower and lower energies and gets narrower and narrower. Therefore each event in the FD will have a corresponding probability, `FDEventRateAtND(E, OAPos)` to appear at a given off-axis position depending on its energy. This probability is normalized to 1 over the entire off-axis range. If we don't account for this **FD Event Rate at the ND**, we wrongly give an equal probability for any FD Event, regardless of its energy, to appear in the ND, at any off-axis position, which is wrong!
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/48e29025-2acc-4e70-9bc5-9b18ead9ac97" width="45%">
+  <img src="https://github.com/user-attachments/assets/08e91540-a3f8-4f75-8c59-19c3f56d821b" width="44%">
+</p>
+
+Depending on the energy variable used -- in this example I mentioned true neutrino energy, but one can use different energies, for example hadron energy and muon energy of a given event,  hadron +muon energy etc. The true neutrino energy should in principle be the most correct variable. However by using true neutrino energy we add model-dependence. So it would be ideal to be able to use energy variable that we can directly see in the detector. 
+
+There are 2 possibilities of using such a function in the current code:
+  - true energy - dependent: `FDEventRateAtND_ETrue(ETrue, OAPos)`
+    ```bash
+    double FDEventRateAtND_ETrue(FunctionCache& cache, double Etrue, double OAPos)
+    ```
+    This function is reading the values of the FDEventRateAtND function for different true neutrino energy bins (or ranges) from an output file called `Splines_FDEventRateAtND_ETrue.root`. This root file can be found on the `EtrimAnalysis` branch of this reposiotory, where the file `EffFitFunctionCorrectEbinningSelectedEventsSplineETrue.C` to create this function is also located. The `Splines_FDEventRateAtND_ETrue.root` gives the value of this probability over the entire off-axis range of interest for fixed true neutrino energy bins. The bin edges corresponding to these bins, `kTrueEBinEdges` are also saved in the file (i.e `f_norm_etrue1` is the proability of FD event rate at the ND for neutrino energy ranging from bin edge0 to bin edge 1 etc)
+
+    The function can further be used and called within the code as
+    ```bash
+    FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos)`
+    ```
+     where
+    ```bash
+    FunctionCache cacheEtrue;
+    cacheEtrue.loadFunctions("Splines_FDEventRateAtND_ETrue.root", FunctionType::ETrue);
+    ```
+    and `EnuTrue[i_iwritten]` is the true neutrino energy of the event and `OAPos` is the corresponding off-axis position within the ND.
+    
+  - hadron energy and lepton energy `FDEventRateAtND(Ehad, Elep, OAPos)` : 1 given neutrino event has a specific hadron energy deposited inside the detector and a given muon energy; this can be further used in order to define this event rate function for a fixed hadron energy and muon energy
+    ```bash
+    double FDEventRateAtND(FunctionCache& cache, double Ehad, double Emu, double OAPos)
+    ```
+    Since we use the ND selected events to obtain this FD Event Rate at the ND probability, and since we are interesed in how a given FD event would be seen by the ND, the `Ehad` used here should be the hadronic energy deposited inside the ND-LAr active volume -> so `Ehad` here is in fact our trimmed energy `Etrim`.
+
+    This function is reading the value of the FDEventRateAtND function for different - fixed `Ehad` and `Elep` bins over the entire off-axis range, from an ouput file called `Splines_FDEventRateAtND.root`. This root file can be found on the `EtrimAnalysis` branch of this reposiotory, where the file `EffFitFunctionCorrectEbinningSelectedEventsSplineEhadElep.C` to create this function is also located. The `Splines_FDEventRateAtND.root` gives the value of this probability over the entire off-axis range of interest for a fixed hadron energy and lepton energy bin. The bin edges corresponding to these bins, `kHadBinEdges` and `kLepBinEdges` are also saved in the file (i.e `f_norm_lep1_had1` is the proability of FD event rate at the ND for an event with hadronic energy ranging from bin HadBinEdge0 to bin HadBinEdge1 and a muon energy ranging from LepBinEdge0 to LepBinEdge1.. etc)
+
+    The function can further be used and called within the code as
+    ```bash
+    FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+    ```
+    where
+    ```bash
+    FunctionCache cacheLepHad;
+    cacheLepHad.loadFunctions("Splines_FDEventRateAtND.root", FunctionType::LepHad);
+    ```
+    and ```info.Etrim *1E-3``` is the trimmed energy of a given throw in GeV, `info.Emu*1E-3` is the muon energy in GeV, and `OAPos` is the corresponding off-axis position in the ND.
+    
+    **This is the function that should be used - if possible all the time in the analysis, rather than the true energy one**. By using Ehad and Elep , which are the deposited energies in the detector (at this point we use true muon energy in the entire analysis simply because we have no muon reconstruction but this would eventually change) we avoid any kind of neutrino interaction model dependency. The probability as a function of true energy should in principle the most correct one and can be used to cross check there is nothing wrong in the analysis regarding this particular step but should in principle be avoided.
 
 - Histograms in the code (most important ones)
 
