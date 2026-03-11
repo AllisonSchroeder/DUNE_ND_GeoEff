@@ -144,7 +144,7 @@ The code itself is based on Flynn's previous work but has several additions / ch
 
 If for example your output file from the hadron geo eff part is called OutputHadronGeoEff.root than run the muon efficiency code as: ```python FD_maketree.py OutputHadronGeoEff.root``` . As a result you will obtain a file with information regarding the combined (hadron and muon efficiency).
 
-  - variables need as an input:
+  - variables needed as an input:
 
     muon info: position and momentum of the muon startign point (x, y, z) `ND_OffAxis_Sim_mu_start_v_xyz_LAr`, `ND_OffAxis_Sim_mu_start_p_xyz_LAr`
 
@@ -278,6 +278,51 @@ The code is run using both the hadron geo eff and muon geo eff output files. i.e
 ```bash
 ./NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_WithOscSpectrumNOCAFAna_FDRateAtND OutputHadronGeoEff.root OutputMuonFDGeoEff.root
 ```
+
+We read in more variables (than we actually use) but I think it's always useful to have access to more information. 
+
+ - variables needed as an input (from the hadron geo eff ):
+   - `iwritten` -- event counter (goes from 0 to nr of FD events in the original FD ntuple used as input for hadron and muon eff)
+   - `ND_LAr_dtctr_pos` -- detector off-axis position with respect to neutrino beam (so far this is only equal to 0 in the current analysis , but would be useful for the future when using different detector poistions)
+   - `ND_LAr_vtx_pos` -- vtx_x choices inside ND-LAr
+   - `ND_GeoEff` -- this is the hadron geometric efficiency -> 1 value / vtxX / dePos/ FDEvent
+   - `validThrows` -- this is the total number of throws of a given FD event -> 1 value/ vtxX / detPos / FD Event
+   - `NPassedThrows` -- number of throws that passed the hadron selection cut (for each vtxX position this number of passing throws is different) -> 1 value/ vtxX / detPos / FD Event
+   - `TrimEnergyEventsPass` -- trimmed energy (i.e hadronic energy deposited inside ND-LAr active volume) of events that pass the hadron selection -- here we have one value for each passing throw -> 1 value/ vtxX /PassingThrowAtVtx /  detPos / FD Even
+
+   - `totEnergyFDatND_f` -- total hadronig energy deposited inside FD Active volume (this is what we trim from) -> 1 value / FD Event
+   - `muonEdep_f` -- deposited energy of muon in FD -> 1 value / FD Event
+   - `muonTrackLength_f` -- muon track length -> 1 value / FD Event
+   - `ND_Gen_numu_E` -- true neutrino energy at generator level -> 1 value / FD Event
+   - `ND_E_vis_true` -- true visible neutrino energy -> 1 value / FD Event
+   - `ND_OffAxis_Sim_mu_start_E_xyz_LAr` -> muon energy momentum vector: used to get muon energy -> 1 value / FD Event
+
+- variables needed as input (from muon geo eff):
+   - `combined_eff` -- combined (hadron and muon) efficiency -> 1 value/ vtxX / detPos / FD Event
+   - `muon_selected_eff` -- muon efficiency -> 1 value/ vtxX / detPos / FD Event
+   - `muon_tracker_eff` -- muon tracker efficiency (i.e only passing the tracker cuts) -> 1 value/ vtxX / detPos / FD Event
+   - `weightPmuon` -- muon probability to be either contained in ND-LAr *OR* matched in tracker -> 1 value/ vtxX/ PassingThrowAtVtx / detPos / FD Event (PassingThrowAtVtx is taken from the hadron eff part)
+
+### 3.2 Analysis specifics variables and functions
+
+- variables we need and use / define within the code:
+  - `a_ND_off_axis_pos_vec` -- these are the detector positions we need to use, same as those for the ND CAFs. Since currently we assume the same efficiency at all detector positions, we only run the hadron and muon geometric efficiencies for a detector situated on-axis and we then use different off-axis positions within this analysis part. The idea here is the detector is moved at each inidivudal position inside this vector, and then the efficiency vs vtxX is 'copied' as being the same at every one of these positions. The detector positions used are: `0, -1.75, -2, -4, -5.75, -8, -9.75, -12, -13.75, -16, -17.75, -20, -21.75, -24, -25.75, -26.25, -28, -28.25, -28.5` in meters.
+NOTE: if in the future one chooses to not assume equal efficiency at all detector positions then this would be changed within the muon and hadron geometric efficiency part and this vector in the code would not be used, instead you shoud use all the detector possitions used in the geo eff and muon code, saved in the `ND_LAr_dtctr_pos` variable
+   - `a_ND_vtx_vx_vec` -- vtx_x positions, this variable is recreating the same vtx_x positions used in the hadron and muon geo eff code.
+   - `OAPos` -- this variable is calculating the off-axis position at each detector and vtx_x position: `OAPos = vtx_x+det_pos` -> this is the Off-axis position variable we also use in the PRISM analysis and represents the off-axis position of a given event
+   - `CoefficientsAtOAPos` -- these are the off-axis coefficients; in the current version of the analysis we don't use them anymore, I am fairly sure one should use either the coefficients or the FD Event Rate at ND (more details about this below) but in any case they are still in the code and can be accessed at any time
+   - `WeightEventsAtOaPos` -- this is a weight that accounts for different (non-flat) distribution of events at different detector positions: our detector covers 4m (from -2 m to 2m) width in x direction; since we move the detector at several locations, more often than every 4 m, we are covering some off-axis regions more often than others and have to correct for this. If you are interested in how this weight looks like check the `HistOAPos` histogram.
+   - `EnuTrue` -- variable where we save the true neutrino energy / FD Event
+   - `TotalLeptonMom` -- variable with muon total energy / FD Event
+
+- Functions used in the code:
+
+  As mentioned above, we have to account for the FD event rate at the ND. This is related to the fact that neutrinos with a given true energy have different probabilities of appearing at a different off-axis position in the ND. Take for example a very low energy neutrino: this 
+
+- Histograms in the code (most important ones)
+
+- Information (mainly histogram) needed in the output root file:
+  
 TO Be Continued 
 
 Since we also have access to the total number of throws (```validThrows```) per event / per vtx_x we can easily scale the histogram to the number of ```validThrows``` in order to have the integral of this histogram equal to the corresponding efficiency of this particular FD event when translated to the ND, when the detector is positioned at a given detPos, at a given vtx_x value inside the ND.
