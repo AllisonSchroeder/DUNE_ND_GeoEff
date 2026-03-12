@@ -261,6 +261,8 @@ For each event that passes the hadron geometric efficiency selection (we will ha
 
 At this point we have the `vis Etrim` (vis Etrim = Etrim + Emu is what we call "the visible trimmed energy" and is nothing else than the sum between the hadron energy deposited inside ND LAr and the muon energy) distribution of this particular FD event when translated to the ND, at a fixed vtx_x position inside the ND and fixed detector postion with respect to the neutrino beam axis. We can get such **distributions for each vtx_x and detPos** of interest. So we can then **represent this FD event in a 2D distribution, -- 2D histogram -- as a function of off-axis position ```OAPos = vtx_x + detPos``` and visible trimmed energy**  (vis Etrim = Etrim + Emu). -- i.e remember that at different vtx_x positions inside the detector we had different efficiencies and also different amount of energy deposited inside the ND-LAr active volume: more likely to deposit more energy outside the detector (so lower Etrim values) when the event is close to the ND edges. 
 
+An additional and very important step that has to be accounted for is the *FD event rate at the ND*. This is described in more detail below but it essentially account for the fact that neutrinos with different energies would be seen with different probabilities in the ND, depending on the ND off-axis position. Remember that a detector located at 30m off-axis is sampling mainly very low energy neutrinos (high probability to see low energy neutrinos far off-axis and low probablitiy to see the high energy neutrinos at such off-axis positions). For an on-axis ND the neutrino spectrum extends to higher energies with a much wider coverage in energy (lower probability to see very lower energy neutrinos but higher probability for high energy neutrinos). 
+
 In short, **each FD event can be mapped into the ND as a 2D distribution of off-axis position versus visible trimmed energy, capturing the geometric effects of both hadron and muon selection efficiencies**, allowing a **direct comparison between ND-observed and FD-derived events**. The last steps in the analysis is looping over all FD events (all ntuples) and summing them together in such a 2D histogram. This is the `SelectedEventsVsOAPosVsTotalETrim` histogram in the code, which is created per each event and is further summed for all events in the final (step 5) step of comparing the selected FD events with the ND linearly combined data.  
 
 Below there is a more detailed explanation of the code itself and the additional cuts (i.e CAF-like cut for low energy muons + FD EventRate at ND ) that are applied to this `SelectedEventsVsOAPosVsTotalETrim` histogram.
@@ -311,7 +313,7 @@ NOTE: if in the future one chooses to not assume equal efficiency at all detecto
    - `a_ND_vtx_vx_vec` -- vtx_x positions, this variable is recreating the same vtx_x positions used in the hadron and muon geo eff code.
    - `OAPos` -- this variable is calculating the off-axis position at each detector and vtx_x position: `OAPos = vtx_x+det_pos` -> this is the Off-axis position variable we also use in the PRISM analysis and represents the off-axis position of a given event
    - `CoefficientsAtOAPos` -- these are the off-axis coefficients; in the current version of the analysis we don't use them anymore, I am fairly sure one should use either the coefficients or the FD Event Rate at ND (more details about this below) but in any case they are still in the code and can be accessed at any time
-   - `WeightEventsAtOaPos` -- this is a weight that accounts for different (non-flat) distribution of events at different detector positions: our detector covers 4m (from -2 m to 2m) width in x direction; since we move the detector at several locations, more often than every 4 m, we are covering some off-axis regions more often than others and have to correct for this. If you are interested in how this weight looks like check the `HistOAPos` histogram.
+   - `WeightEventsAtOaPos` -- this is a weight that accounts for different (non-flat) distribution of events at different detector positions: our detector covers 4m (from -2 m to 2m) width in x direction; since we move the detector at several locations, more often than every 4 m, we are covering some off-axis regions more often than others and have to correct for this. By using this weight we account for *how many times have we put a FD event in a given off-axis position, given our ND detector positions*. If we had detector stops every 4m-only, then every event would only be put once in each off-axis position and this weight would be equal to 1. Together with the *FD Event rate at ND* function this weight is accounting for how often have we put the event at an off-axis position and with which probability. I.e if a low neutrino-energy FD event (higher probability to come from far off-axis than from on-axis) has been put more times on-axis (lots of detector movements very close around the on-axis position) than far off-axis(less detector stops far off-axis), the event's main contribution would still come from far off-axis, where the FD event rate at the ND is higher. If you are interested in how this weight looks like check the `HistOAPos` histogram. 
    - `EnuTrue` -- variable where we save the true neutrino energy / FD Event
    - `TotalLeptonMom` -- variable with muon total energy / FD Event
 
@@ -342,6 +344,8 @@ There are 2 possibilities of using such a function in the current code:
     cacheEtrue.loadFunctions("Splines_FDEventRateAtND_ETrue.root", FunctionType::ETrue);
     ```
     and `EnuTrue[i_iwritten]` is the true neutrino energy of the event and `OAPos` is the corresponding off-axis position within the ND.
+
+    -> use this function if you need to cross check any miss-match in the final result is not due to this step of the analysis.
     
   - hadron energy and lepton energy `FDEventRateAtND(Ehad, Elep, OAPos)` : 1 given neutrino event has a specific hadron energy deposited inside the detector and a given muon energy; this can be further used in order to define this event rate function for a fixed hadron energy and muon energy
     ```bash
@@ -364,13 +368,119 @@ There are 2 possibilities of using such a function in the current code:
     
     **This is the function that should be used - if possible all the time in the analysis, rather than the true energy one**. By using Ehad and Elep , which are the deposited energies in the detector (at this point we use true muon energy in the entire analysis simply because we have no muon reconstruction but this would eventually change) we avoid any kind of neutrino interaction model dependency. The probability as a function of true energy should in principle the most correct one and can be used to cross check there is nothing wrong in the analysis regarding this particular step but should in principle be avoided.
 
-- Histograms in the code (most important ones)
+    -> once you cross checked (by using the Etrue version of the function) that this step of the analysis is doing what it should (i.e you get very similar results by using the Etrue version and by using the EhadElep version of the function) you should stick to using this Ehad-Elep version!
+
+### Down-weighting muons at low energies: CAF-like weight
+
+In the current ND CAFs there is an additional cut (besides the muon being either contained in ND-LAr or further matched in the tracker) regarding **low energy muons which could not be reconstructed**. This cut is regarding:
+    - minimum track length of a muon:  muons have to have more than 1 m long track in order to be reconstructed 
+    - too much energy deposited energy per unit length: muons should deposit less than 3 MeV / cm along the track in order to be properly reconstructed 
+
+Since those are not geometric related cuts (rather related to the muon reconstruction / identification itself) we didn't have them in our geometric efficiency approach. In order to account for such a cut (we want to make sure we apply *exactly the same selection* as done in the PRISM analysis using the NDCAFs, the folowing `weightCAFLike` weight is defined. 
+
+```bash
+weightCAFLike[i_iwritten] = 1.;
+if(muonTrackLength_f < 100. || muonEdep_f/muonTrackLength_f > 3.){
+   cout<<"** this event will not be selected!! "<<" ev nr "<<i_iwritten<<" muon e dep: "<<muonEdep_f<<" muon track length: "<<muonTrackLength_f<<endl;
+   weightCAFLike[i_iwritten] = 0.;
+}
+```
+-- by accessing the muon track length and energy deposit (saved from the geometric efficiency stage) we define the `weightCAFLike` weight which is equal to 1 for all events except of those with a too short muon track or too much energy deposited / track. Thus by weighting our selected events histogram with this CAF-like weight we corrently account for these additional cut (this selection cut is mainly affect low energy muons, with energies < 300 MeV or so).
+ 
+ ### 3.3  Code structure, loops and histograms 
+ 
+`ThrowInfo` structure is storing all information of the passing throws, on a throw by throw basis: `Etrim` - hadronic energy deposited inside ND-LAr, `Emu` - muon energy, `weightPmuon` muon efficiency (either ND-LAr contained or TMS matcher) of the inidivual throw that passes the hadron geo eff .  
+
+Since each FD event has a number of passing throws , `NPassedThrows`, at a given vtx_x position, the throw information is saved in AllThrowInfo  
+```bash
+std::vector<std::vector<std::vector<ThrowInfo>>> AllThrowInfo;
+```
+The looping sequence is very similar to what is done in the hadron and muon geometric efficiency codes:
+
+  1. Loop over all FD Events
+    -- this is where variables that have one value / FD event (independent on throws) are accessed and written out: i.e true neutrino energy, true muon neutrino energy etc
+    -- within the same loop there are variables that also have one value / FD event but that have been saved for each vtx postion (terrible I know sorry..): for this variables we choose a fixed value of vtx_x (can be whatever value that has been used in the hadron geo eff part) in order to only write them once / event in the output histogram. Those are variables like:
+       - `totEnergyFDatND_f` : tot hadronic energy deposited inside FD (this is what we trim from in the ND)
+       - `muonEdep_f` : muon deposited energy
+       - `muonTrackLength_f` muon track length -> used together with `muonEdep_f` to define the `weightCAFLike`
+
+  2. Loop over all vtx_x:
+       - `nPassThrowsPerEvent` : total number of passing throws per FD Event
+       - `nPassThrowsPerVtx` : total nr of passing throws per vtxX
+      2.1 Loop over the number of passing throws at each vtx_x
+         - access and save the throw info, `Etrim`, `Emu` and `weightPmuon ` into the `AllThrowInfo` vector -> saved here and used later on
+     
+  Up until now we only saved and defined variables and information that we need in the later part of the code. At this point we have everything we need and can go towards the end-goal of obtaining Etrim Vs Off-axis Positions distributions of FD events in the ND (geo eff corrected for):
+
+  - define same energy binning as used in the PRISM analysis (CAFAna) -- currently same binning as for `fine_prism` option in CAFAna (can see different binning options in CAFAna at `lblpwgtools/CAFAna/PRISM/Axes.cxx `
+  - define several histograms of interest
+  - start looping
+
+1. Loop over all FD Events : `for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)`
+   - define histograms that will be saved as per FD event:  most of the histograms of interest are per 1 FD event, i.e we want to see different distribution of a FD event in the ND after being put at several vtx_x and detPos
+       - `SelectedEventsVsOAPosVsTotalETrim[i_iwritten]` : this is the most important histogram, showing the **2D distribution (off-axis vs VisEtrim) of a FD event as seen by the ND**, capturing the geometric effects of both hadron and muon selection efficiencies in the ND. The histogram is saved as per 1 FD event, but has a significant number of entries, as it is composed by all passing throws (at all vtx_x positions and detector positions )-- in principle it should have something like nvtXPositionsUsed*nDetPos * TotalPassingThrows entries / event 
+       - `AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]` : this is also a very important histogram, showing the  **2D distribution (off-axis vs VisEtrim) of a FD event as seen by the ND** , as if all throws would pass i.e 100% efficiency. this histogram is basically containing all the events in `SelectedEventsVsOAPosVsTotalETrim[i_iwritten]` but is weighted so that the total number of entries is equal to the total number of throws -> this is done just so one can have some *diagnosis efficiency plot* in the end by dividing the 2 histograms: `SelectedEventsVsOAPosVsTotalETrim[i_iwritten]/AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]`
+
+       - `HistEtrimAllVtxXTimesCoeff[i_iwritten]`:  this is a histogram showing the trimmed energy distribution (entries vs Etrim) of a FD event when translated to the ND - no FD event rate at ND applied
+           - one can apply the linear combination coefficients to such a histogram (see below)
+       - `HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]`: this is a histogram showing the trimmed energy distribution (entries vs Etrim) of a FD event when translated to the ND - with FD event rate at ND applied
+           - one can apply the linear combination coefficients to such a histogram, but you shouldn't-- once you applied the FD event rate at ND applying the coefficients further on is wrong (see below)
+       
+       Will come back with additional info about these histos
+
+   - define plots that will be saved as per FD event:  
+       - `PlotCombinedEfficiencyVsVtxX[i_iwritten]` -- plot containing combined (hadron and muon) efficiency of a FD event at the ND as a function of its vtx_x position inside the ND
+       - `PlotEfficiencyVsVtxX[i_iwritten]` -- plot containgly ONLY hadron geom efficiency of a FD event at the ND as a function of its vtx_x position inside the ND
+       - `PlotMuonEfficiencyVsVtxX[i_iwritten]` -- plot containing ONLY muon efficiency (contained in ND-LAr || tracker matched) -> temporarily commented to save memory and storage for the end-result output files but can uncomment if interested in how this looks
+       - `PlotMuTrackerEfficiencyVsVtxX[i_iwritten]` -- plot containing ONLY muon tracker efficiency -> temporarily commented to save memory and storage for the end-result output files but can uncomment if interested in how this looks
+    
+  2. Loop over vtx_x positions: `for (Double_t i_ND_LAr_vtx_pos: a_ND_vtx_vx_vec)`
+     - define histograms that have information as per 1FD event per vtxX: these are in principle histograms containing throws related information (remeber: many throws at a fixed vtx_x position, fixed det_pos / FD Event)
+     - fill in plots only dependent on vtxX (i.e everything in terms of value vs vtxX, where no PerThrow info is needed)
+     - access the **throw structure**: `const auto& throwList = AllThrowInfo[i_iwritten][i_vtxX_plot];`
+
+  As already mentioned above, the current code assumes equal efficiency at all detector positions. This is why we add the desired positions as part of this code and then assume the same efficiency at the same vtx_x value inside the ND, regardless where the ND is positioned. This is what is done further on, where the loop over the detector positions starts (and is within the vtx_x loop)
+
+  3. Loop over detector positions: `for (Double_t i_ND_LAr_dtctr_pos: a_ND_off_axis_pos_vec)`
+
+     Once the detector position is set we can defined the off-axis position: `OAPos = ND_LAr_vtx_pos/100.0 + a_ND_off_axis_pos_vec[i_detpos-1];`
+     - define and access histograms and plots that are related to 1 FD event info / vtxX / detPos or 1FD event / OAPos
+       - HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1] : here we define 1 histogram / per FD event / per vtxX /per detPos containing the Etrim distribution of all passing throws; no FD event rate at ND will be applied here
+       - HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]:  here we define 1 histogram / per FD event / per vtxX /per detPos containing the Etrim distribution of all passing throws; we apply FD event rate at ND 
+     - access the coefficients at the correponding OAPos : ` CoefficientsAtOAPos = CoefficientsHist->GetBinContent(CoefficientsHist->FindBin(OAPos));`
+     - define the weight that accounts for different (non-flat) distribution of events at different detector positions: `WeightEventsAtOaPos = HistOAPos[i_iwritten]->GetBinContent(HistOAPos[i_iwritten]->FindBin(OAPos));`
+
+  4. Loop over the passing (hadron geo eff passing) throws: `for (const auto& info : throwList)`
+
+      Here we want to access throw-specific information, i.e trim energy, muon energy, muon efficiency
+      Fill in the end-result histograms with this info:
+      ```bash
+      SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 ,OAPos, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));//FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+      ```
+      This histograms will have the total number of entries = totalNumberOfPassingThrows * nvtxX positions * detector positions -- remember totalNumberOfPassingThrows is going to be the sum of passing throws at different vtxX positions
+     
+      you can see we fill the histogram (again this is per 1 FD Event, but it has in fact information from each vtx_x, detPos and passing throw) with the VisEtrim (= Etrim + Emu) in Gev, OAPos, and we then apply the weights:
+     
+        - `info.weightPmuon` : muon efficiency of this throw passing the hadron geo eff cut
+        - `1.0/WeightEventsAtOaPos` : downweight events to account for several detector positions overlapping, i.e more sampling of several off-axis positions
+        - `weightCAFLike[i_iwritten] ` : weight to account for very low energy muons (with very short tracks or too much energy depositions) not being selected in the ND
+        - `FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos)` : FD event rate at ND
+     In the current version the FD event rate at the ND as a function of true neutrino energy has been used. this is because I wanted to cross-check the results for this case and compare them with the Ehad-Elep FD event rate at ND function. At least as far as I could see the results don't differ very much, so my adivce is to use the Ehad-Elep version. To do so comment out `FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos))` and use `FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos)` instead
+
+      ```bash
+      AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 , OAPos, double(validThrows)/throwList.size()* 1.0/WeightEventsAtOaPos * FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));// FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+      ```
+      The weights here are the same as in the SelectedEvents histogram case, with the additional wait of `double(validThrows)/throwList.size()`. Since we want to have here *All Throws*, i.e in principle the events before any selection has been applied, we would want this histogram to have the total number of entries equal to the total number of throws (in fact it would be equal to total number of throws * nvtxX positions * detector positions). This is why add this additonal weight, `(validThrows)/throwList.size()` -- i.e by default for each fixed vtx_x and detPos we have `throwList.size()`, which is equal to the nr of passing throws at that vtx_x . Since we would want to have the total number of throws, i.e `(validThrows)` then we add this weight. You might also notice the lack of the `weightCAFLike[i_iwritten]` and `info.weightPmuon` weights, which is also on purpose since we don't want to apply any selections.
+
+Be careful though, numerically the efficiency is going to be correct if we divide these 2 histograms. However since we only have information (i.e `Etrim`) from the throws that pass the hadron geo eff selcetion and not from every single throw, the energy dependence of this efficiency would not be 100% correct. This is because some of the throws that have not passed the hadron geo efficiency cut will for sure have a different `Etrim` value than those that passed. By creating the histogram the way we do here, we assume all the throws that didn't pass would have had the same `Etrim` values as those that passed. Since this histogram is in any case not used in the final analysis and is rather saved as a mean of cross checking things I don't think this is going to be significant issue. If you would want to be 100% correct then you would need to save all throw information from the hadron geo efficiency part. This shouldn't be too difficult to do but will for sure increase your computational needs.
+     
+
 
 - Information (mainly histogram) needed in the output root file:
   
 TO Be Continued 
 
-Since we also have access to the total number of throws (```validThrows```) per event / per vtx_x we can easily scale the histogram to the number of ```validThrows``` in order to have the integral of this histogram equal to the corresponding efficiency of this particular FD event when translated to the ND, when the detector is positioned at a given detPos, at a given vtx_x value inside the ND.
+Since we also have access to the total number of throws (```validThrows```) per event / per vtx_x we can easily scale the histogram to the number of ```validThrows``` in order to have the integral of this histogram equal to the corresponding efficiency of this particular FD event when translated to the ND, when the detector is positioned at a given detPos, at a given vtx_x value inside the ND 
 
 The idea would be that once we put the FD event at different configurations in the ND and once we have
 
