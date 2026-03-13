@@ -16,7 +16,8 @@ In principle the working steps are the following:
 1. Get the hadron geometric efficiency of FD events at the ND
 2. Get the muon geometric efficiency (NN) of FD events that pass the hadron geo eff -> get the combined efficiecny (passing both hadron cuts and muon cuts)
 3. Analyse the FD events selected at the ND (access Etrim histograms of each passing throw from hadron geo Eff, weight them by the probability the event passes the muon cuts, Pmu(Emu,throws)
-4. Compare All selected FD events at the ND with PRISM linearly combined ND data
+4. Sum together all FD events translated to the ND -> evaluate the ND response to the entire FD spectrum
+5. Compare All selected FD events at the ND with PRISM linearly combined ND data
 
 More details about each individual steps: 
 ## 1. Hadron Geometric efficiency of FD events at the ND
@@ -518,5 +519,38 @@ The way the two histograms are currently in the code and still written to the ou
    - `Oschist_EnuFDEnergy` - histogram with oscillated FD neutrino energy spectrum
 
  ### 3.5 Remarks about the oscillated spectrum
+
+The oscillation in this analysis is applied directly to the FD spectrum. I.e we *take the events from a FD oscillated spectrum* -- that being said the idea here is we have access to whatever we observed in the FD. So we then take the events from the FD oscillated spectrum and translate them to the ND etc etc.
+
+The oscillation probability is applied only at this stage - i.e stage 3 of the analysis. This means that *you can use the same output from the hadron and muon geometric efficiency for both oscillated and unoscillated procedure*. Depending which code you are running, either `./NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_WithOscSpectrumNOCAFAna_FDRateAtND` or `NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_NOOscSpectrumNOCAFAna_FDRateAtND` you run the analysis for an oscillated FD spectrum or a non-oscillated one. 
+
+Specific headers used in the *with oscillations* code are:
+```bash
+#include "Calcs/Calcs.h"
+#include "OscLib/OscCalcPMNSOpt.h"
+```
+  - the oscillation object, `IOscCalc` is the same as used within CAFAna and is defined in the code as `osc::IOscCalc* calc = ana::DefaultOscCalc();` -> you can check `Calcs.cxx` for the default oscillation parameters values.
+  - you can also change the oscillation parameters by using the `calc->SetTh23()` function for theta23 parameters etc. -- functions also defined in `Calcs.cxx`
+
+
+The oscillation itself is done by applying the **oscillation probability** to the FD events:
+```bash
+calc->P(14,14,ND_Gen_numu_E)
+```
+this is the oscillation probability -- actually survival probability -- for muon to muon neutrino (first 2 numbers represent the neutrino species, from 14 to 14 means from muon neutrino to muon neutrino) of events with neutrino energy `ND_Gen_numu_E`. This neutrino energy, `ND_Gen_numu_E` is the true neutrino energy as take from the input FD ntuples.
+
+You can notice that the oscillation proability is applied to FD events and the corresping spectrum of oscillated neutrino spectrum at FD is saved in the `Oschist_EnuFDEnergy` . I recommend to always save this histogram as this should be one of the first cross checks with the PRISM analysis: make sure same oscillation parameters are used.
+
+Further on the oscillation probability (function of neutrino energy of the FD event) is also applied to the final distribution of a given FD event in the ND: `SelectedEventsTwoDHisto_FDEvt_` , `HistEtrimPmuWeightedAllVtxXTimesCoeff_FDEvRateAtND_FDEvt_` etc:
+```bash
+HistEtrimAllVtxXTimesCoeffWithFDEvRateOscillated[i_iwritten]->Scale(calc->P(14,14,EnuTrue[i_iwritten]));
+
+SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Scale(calc->P(14,14,EnuTrue[i_iwritten]));
+AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]->Scale(calc->P(14,14,EnuTrue[i_iwritten]));
+```
+Since each FD event can be represented in a 2D or 1D distribution in the ND, and since we save and care about this ditributions anyways, we can then apply the corresponding oscillation probability directly to these distributions: i.e if instead of 1 FD event (non-oscillated case) now I have 0.3 FD events (30% oscillation probability), the ND event would still see this FD event the same (energy of this event doesn't change, so ND efficiency also doesn't change). So all we need to do is just scale down this 1 FD event to 0.3 FD events so it is able to have a 1 to 1 comparison to the FD spectrum.
+
+NOTE: always make sure to use the same oscillation parameters in the geometric efficiency and in the PRISM prediction you want to compare to!
+
 
 
