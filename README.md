@@ -475,17 +475,48 @@ The looping sequence is very similar to what is done in the hadron and muon geom
 Be careful though, numerically the efficiency is going to be correct if we divide these 2 histograms. However since we only have information (i.e `Etrim`) from the throws that pass the hadron geo eff selcetion and not from every single throw, the energy dependence of this efficiency would not be 100% correct. This is because some of the throws that have not passed the hadron geo efficiency cut will for sure have a different `Etrim` value than those that passed. By creating the histogram the way we do here, we assume all the throws that didn't pass would have had the same `Etrim` values as those that passed. Since this histogram is in any case not used in the final analysis and is rather saved as a mean of cross checking things I don't think this is going to be significant issue. If you would want to be 100% correct then you would need to save all throw information from the hadron geo efficiency part. This shouldn't be too difficult to do but will for sure increase your computational needs.
      
 
+In the same loop there are 2 additional histograms that are filled in and that you may need to access at some point (we don't have to currently but just in case, for cross-check etc). These two histograms are 1D histos and saving basically the same inofrmation, i.e the distribution of a FD event when translated to the ND, with hadron and muon geometric efficiency corrected for, as a function of *visible trimmed Energy (i.e total amount of hadronic energy deposited inside ND-LAr active volume + true muon energy* only. 
+```bash
+HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon * weightCAFLike[i_iwritten]);
+HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Fill(info.Etrim + info.Emu , info.weightPmuon  * weightCAFLike[i_iwritten] * FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));//FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+```
+Notice that in one of the histograms the FD event rate is applied, while in the other one it isn't. This is because I used them to make a point that applying both the FD event rate and the coefficients gives us wrong results and to make a point that either one or the other is needed. So I would recommend, if you want to make a point, to try to apply first linear combination coefficients to `HistEtrimDetPosNoFDEventRate` and compare it with `HistEtrimDetPosWithFDEventRate` without coefficients applied. You can then run again and apply the coefficients to `HistEtrimDetPosWithFDEventRate` and show doing both coefficients and FD event rate results in very bad match - because you are in principle accounting for the rate at which neutrinos with a given energy in the FD appear in the ND twice.
 
-- Information (mainly histogram) needed in the output root file:
-  
-TO Be Continued 
+You can see that these histograms are per FD event/ per vtx_x /per detector position and filled for each passing throw. Which means they will each have a nr of Passing throws /FDEvent / vtx_x/ detpos entries.
 
-Since we also have access to the total number of throws (```validThrows```) per event / per vtx_x we can easily scale the histogram to the number of ```validThrows``` in order to have the integral of this histogram equal to the corresponding efficiency of this particular FD event when translated to the ND, when the detector is positioned at a given detPos, at a given vtx_x value inside the ND 
+Once we *exit the passing throws loop* these histograms are further scaled to the total number of `validThrows` so that the integral of each histogram would be equal to the geometric efficiency of this FD event in the ND at the given vtx_x position and detpos. i.e this one FD event would be seen as a 0.2 events in the ND at vtx_x and detpos, with this Etrim distribution. 
+```bash
+HistEtrimDetPosNoFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(1.0/validThrows );//* 1.0/WeightEventsAtOaPos);// * CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);
+HistEtrimDetPosWithFDEventRate[i_iwritten][i_vtxX_plot-1][i_detpos-1]->Scale(1.0/validThrows );//* 1.0/WeightEventsAtOaPos);// * CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);
+```
+Since these histograms are per vtx_x and per detPos applying the `WeightEventsAtOaPos` is not needed here, unless you apply the coefficients, which are function of off-axis positions - we want to apply this weight only when looking at events *everywhere -- over all off-axis positions*  in the ND, not at a fixed point only.  Currently in the code that *coefficients* part is commented out, but if you want to applyu the off-axis coefficients (again if you apply the FD event rate at the ND applying the coefficents is wrong) you can uncomment the `* CoefficientsAtOAPos * 1.0/WeightEventsAtOaPos);` part.
 
-The idea would be that once we put the FD event at different configurations in the ND and once we have
+As these hisotgrams are per FD Event / per vtx_x / per det pos (you can save them individually as well to cross check. however since by doing so we would have many more histograms in the output file, so much larger size and much slower computational process this is not done in the current verion), and we would want to have in the end the distribution of 1 FD event as a functio of E trim *everywhere in the ND*, at all detector positions and vtx_x positions inside the detector, i.e at all off-axis positions of interest, we save the sum of such hsitograms over the entire detector positions and vtx_x positions used: `HistEtrimAllVtxXTimesCoeff[i_iwritten]` respectively `HistEtrimAllVtxXTimesCoeffWithFDEvRate[i_iwritten]`. So now those histograms show the trimmed energy distribution of 1 FD event when translated to the ND and when the ND is moved at several off-axis positions.
 
+The way the two histograms are currently in the code and still written to the output root file (no coeffs applied) are for visual purposes, in case you would want to see how does your event look in the FD as a function of trimmed energy. However you can obtain this info fom the main used histo `SelectedEventsVsOAPosVsTotalETrim`
 
-In order to ensure the correct **same conditions** for our FD events when put in the ND, several steps are used in this analysis section. 
+ ### 3.4 Output histograms
 
-(access Etrim histograms of each passing throw from hadron geo Eff, weight them by the probability the event passes the muon cuts, Pmu(Emu,throws)
+ The results are saved in an output root file, called either `FileWithHistEtrim_MuAndHaddEff_VisEtrim_FDEvRateAtND_NDFV4m_NoOsc_NoCoeffsApplied_2DHistosWithSelectedAndThrownEvents_WithCAFLikeMuCut.root` or `FileWithHistEtrim_MuAndHaddEff_VisEtrim_WithOscProb_FDEvRateAtND_NDFV4m_2DHistosWithSelectedAndThrownEvents_WithCAFLikeMuCut.root` depending if the with or without oscillations code was saved. The resulting output file will contain results for the same amount of FD events as stored in the files obtained from the hadron and muon geo eff, which are used as input for running the code. The following are saved:
+   - `SelectedEventsTwoDHisto_FDEvt_` -- as already mentioned several times, the most important histogram, containing the 2D distribution of a FD event, as seen by the ND (with hadron and muon efficiency applied), as a function of the off-axis position and visible trimmed energy (again VisEtrim = Etrim_had + true muon energy : the total amount of hadronic energy deposited in ND-LAr active volume + true muon energy)
+   - `AllThrownEventsVsOAPosVsTotalETrim_FDEvt_` : contains the 2D distribution of all throws of a FD event when translated to the ND -> can be further used to get some proxy for the efficiency of FD events in the ND   
+   - `HistEtrimPmuWeightedAllVtxXTimesCoeff_FDEvRateAtND_FDEvt_` - this is the `HistEtrimAllVtxXTimesCoeffWithFDEvRate` histogram. the way the code is right now this is nothing else but the 1D distribution of a FD event as seen by the ND (with hadron and muon efficiency applied) as a function of visible trimmed energy and with the FD event rate at the ND applied --> it is basically the 1D version of the above 2D histogram with SelectedEvents.  No coefficients are applied to this histo in the current code, name is confusing sorry. but as mentioned you can always apply the coefficients to this histogram if needed
+   - `HistEtrimPmuWeightedAllVtxXTimesCoeff_NoFDEvRate_FDEvt_` - this is the `HistEtrimAllVtxXTimesCoeff` histogram: same 1 D distribution of a FD event as seen by the ND as a function of visible trimmed energy, but no FD event rate at ND applied.
+
+   - `GraphEffficiency_FDEventNr_ ` - plot with hadron geo eff of the FD event vs vtx_x position at a fixed detpos (since we consider efficiency is the same at each detector position it doesn't matter which detpos this is for)
+   - `GraphEffficiency_AllNDDetPos_FDEventNr_` - plot with hadron geo eff of the FD event vs off-axis positions: this is a nice plot to visualize how we basically replicate the same efficiency for each detpos used in this analysis
+   - `GraphCombinedEffficiency_FDEventNr_` - plot with combined (muon and hadron) of the FD event vs vtx_x position at a fixed detpos
+     
+   - `hist_FDTotEnergy` - histogram with total amount of hadronic energy of the FD events in the FD
+   - `hist_muEdep` - histogram with muon deposited energy
+   - `hist_muTrackLength` - histogram with muon track length
+   - `LepMomTot` - histogram with true muon energy
+   - `hist_EnuFDEnergy` - histogram with true FD neutrino energy spectrum (always unoscillated)
+   - `hist_visEnuFDEnergy` - histogram with visible energy (from FD events)
+     
+   If the oscillated version is run there will also be:
+   - `Oschist_EnuFDEnergy` - histogram with oscillated FD neutrino energy spectrum
+
+ ### 3.5 Remarks about the oscillated spectrum
+
 
