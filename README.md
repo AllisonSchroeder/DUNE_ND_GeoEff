@@ -552,5 +552,57 @@ Since each FD event can be represented in a 2D or 1D distribution in the ND, and
 
 NOTE: always make sure to use the same oscillation parameters in the geometric efficiency and in the PRISM prediction you want to compare to!
 
+## 4. Obtain the distribution of ALL FD events, as seen (geo eff corrected for) by the ND
+
+To sum up the results of all FD events (from all FD ntuples), you can use the `SumEtrimHistos.C` code, which can be found  on the ```EtrimAnalysis``` branch of this repository: https://github.com/icaracas/DUNE_ND_GeoEff/ . To run this code do:
+```bash
+SumEtrimHistos("/pnfs/dune/scratch/users/icaracas/EtrimAnalysis_FromFDGeoEffinND/CombinedEffWithCAFLikeMuCuts/AllOAPosEtrueProb/OscSpectrumNonNegativeEvRateVals", {"hist_visEnuFDEnergy", "hist_EnuFDEnergy","Oschist_EnuFDEnergy", "LepMomTot", "hist_FDTotEnergy", "hist_muEdep", "hist_muTrackLength", "AllThrownEventsVsOAPosVsTotalETrim_FDEvt_", "SelectedEventsTwoDHisto_FDEvt_"}
+```
+
+- where the first parameter is the path to your ouptut root files obtained at the last stage (after step 4) of the analysis.
+- the following parameters are the names of the histograms / distributions in the output file that you wish to sum together
+
+  You can put any of the histograms obtained from the Etrim analysis step 3 here. The absolutely mandatory one is `SelectedEventsTwoDHisto_FDEvt_` as this is the end 2D distribution of FD events in the ND. I also highly recommend saving the FD true neutrino energy spectrum, i.e `hist_EnuFDEnergy` will be the unoscillated spectrum in the FD and `Oschist_EnuFDEnergy` the oscillated spectrum in the FD. If you run for the non-oscillated case then you will have no `Oschist_EnuFDEnergy` histogram so don't add it as a parameter.
+
+- the output file, NAMEOFOUTPUT file will then contain the final distributions (i.e true neutrino energy in FD, 2D distribution of all FD Events
+when translated to the ND and geometrically corrected for, as a function of VisEtrim and off-axis position etc) of all the neutrino events
+in a given FD spectrum.
+
+
+## 5. Compare the distribution of FD events as seen by the ND (hadron + muon geometrically corrected for) with the Linearly Combined selected events in the ND.
+
+If everything works well in the analysis, then **the spectrum of the FD events translated in the ND and geometrically corrected for, with the ND being moved in exactly the same off-axis detector positions (as in the ND-CAFs) and accounting for the FD event rate at the ND, should be identical with the linearly combined spectrum of selected ND events**. 
+
+NOTE: in the ND case we apply the off-axis coefficients to reproduce a desired *oscillated* or *non-oscillated* FD spectrum. In the case of the FD events translated to the ND, these are events already taken from the FD *oscillated* or *non-oscillated* spectrum, which is why applying the linear combination coefficients to these events is not correct (we already account for how often 1FD event appears in the ND for different ND positions by using the FD events rate function. Already discussed this in more details above). Howevere this is why it is important to make sure the same oscillation parameters are used in both cases of interest. This is why it's also always good to save the FD true neutrino spectrum (oscillated or non-oscillated) and further compare it with the true neutrino energy spectrum obtained from CAFAna-PRISM stage.  
+
+The code that does this comparison, `PlotAllOAPosWithCAFLikeCutClean.C` , can be found on the `EtrimAnalysis` brach of this repository: https://github.com/icaracas/DUNE_ND_GeoEff/. The code uses 2 input files:
+
+1. The file obtained using the standard ND-CAFs, `PRISMPred_ERecFromDepWithNeutronEnergyAndTrueEmu_NoSysts_NoOsc_FlatRunPlan_AllOAPos_correcPerFileWeight_NDEffVsEreco.root`
+respectively PUT THE NAME OF WITH OSCILLATIONS THE FILE HERE) for the "oscillated" case comparison.
+
+  These PRISMPred files are obtained by using the classic CAFAna framework used in the PRISM analysis. The main differences (from the standard case) are related to the analysis variable: we need to use the same energy variable for a proper comparison. This means we need to use the hadron energy deposits in the ND + true muon energy. (in the case of PRISM oscillation analysis the smeared reconstructed energy is used.) To do so you should **use the `ERec` variable in CAFAna** . This is defined in `lblpwgtools/CAFAna/Core/SpectrumLoader.cxx` as:
+
+```bash
+sr.eRec_FromDep = sr.eRecoP + sr.eRecoN + sr.eRecoPip + sr.eRecoPim +
+                  sr.eRecoPi0 + sr.eRecoOther + sr.LepE;
+```
+
+  The main histograms read from the PRISMPred file:
+    - `PRISMDataTimesCoeff` : The linearly combined ND data (after ND background subtraction) as a function of energy deposited inside the ND, (in this case true muon E + hadron energy deposits), which is what we want to be able to reproduce with the FD events translated to the ND (and geo eff corrected for); i.e the blue line in the sketch above
+    - `FDTargetSpectrumETrue`: this is the FD target spectrum, in true neutrino energy, that we want to reproduce with PRISM (this should always look the same as the `Oschist_EnuFDEnergy` or `hist_EnuFDEnergy` --depending on the oscillated or non-oscillated study case-- from the GeoEff side.) - this is how we cross check the same oscillation parameters are used in both cases.
+    - `LinCombMatchSpectrumETrue` : this is the linearly combined ND data vs true neutrino energy - can be plot on the same graph with `FDTargetSpectrumETrue` just to see how well we are able to match the spectrum.
+    - `PRISMNDEff293` : this is the efficiecny obtained from the PRISM analysis - i.e MC efficiency; by detault in CAFAna this efficiency is as a function of true energy. I tweaked the code a bit to have it as a function of reconstructed (in this case `ERec`) energy. in any case this is not directly used in the code but mainly used as a comparison with what we get from the Geo eff side. NOTE: since this efficiency is for ND data only (i,e no coefficients applied) you can only use it as a cross check for the non-oscillated, and even there is mostly as a proxy
+  
+
+
+You should also make sure the same oscillation parameters have been used both in PRISMPred and in the Geometric Efficiency case (remember you set
+the oscillation parameters via Calcs.cxx in the Geo Efficiency case , and you can set the oscillation parameters value in the PRISMPredGrid.fcl
+file for the PRISM case)
+
+The end goal of this code is to compare the distribution of ALL FD events as seen by the ND (hadron + muon geometrically corrected for),
+`SelectedEventsTwoDHisto_FDEvt_`
+
+
+
 
 
