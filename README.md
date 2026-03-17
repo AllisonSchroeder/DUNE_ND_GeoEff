@@ -571,11 +571,14 @@ in a given FD spectrum.
 
 ## 5. Compare the distribution of FD events as seen by the ND (hadron + muon geometrically corrected for) with the Linearly Combined selected events in the ND.
 
-If everything works well in the analysis, then **the spectrum of the FD events translated in the ND and geometrically corrected for, with the ND being moved in exactly the same off-axis detector positions (as in the ND-CAFs) and accounting for the FD event rate at the ND, should be identical with the linearly combined spectrum of selected ND events**. 
+If everything works well in the analysis, then **the spectrum of the FD events translated in the ND and geometrically corrected for, with the ND being moved in exactly the same off-axis detector positions (as in the ND-CAFs) and accounting for the FD event rate at the ND, should be identical with the linearly combined spectrum of selected ND events**. A sketch of the full approach (with the end desired match between ND linearly combined data and the FD events as seen by the ND highlighted with the red circle) is shown below. 
+
+<img width="1437" height="764" alt="image" src="https://github.com/user-attachments/assets/75efcdd1-db47-4607-b0b3-56aa9dcf612a" />
+
 
 NOTE: in the ND case we apply the off-axis coefficients to reproduce a desired *oscillated* or *non-oscillated* FD spectrum. In the case of the FD events translated to the ND, these are events already taken from the FD *oscillated* or *non-oscillated* spectrum, which is why applying the linear combination coefficients to these events is not correct (we already account for how often 1FD event appears in the ND for different ND positions by using the FD events rate function. Already discussed this in more details above). Howevere this is why it is important to make sure the same oscillation parameters are used in both cases of interest. This is why it's also always good to save the FD true neutrino spectrum (oscillated or non-oscillated) and further compare it with the true neutrino energy spectrum obtained from CAFAna-PRISM stage.  
 
-The code that does this comparison, `PlotAllOAPosWithCAFLikeCutClean.C` , can be found on the `EtrimAnalysis` brach of this repository: https://github.com/icaracas/DUNE_ND_GeoEff/. The code uses 2 input files:
+The code that does this comparison, using the end results obtained from the analysis so far, `PlotAllOAPosWithCAFLikeCutClean.C` , can be found on the `EtrimAnalysis` brach of this repository: https://github.com/icaracas/DUNE_ND_GeoEff/. The code uses 2 input files:
 
 1. The file obtained using the standard ND-CAFs, `PRISMPred_ERecFromDepWithNeutronEnergyAndTrueEmu_NoSysts_NoOsc_FlatRunPlan_AllOAPos_correcPerFileWeight_NDEffVsEreco.root`
 respectively PUT THE NAME OF WITH OSCILLATIONS THE FILE HERE) for the "oscillated" case comparison.
