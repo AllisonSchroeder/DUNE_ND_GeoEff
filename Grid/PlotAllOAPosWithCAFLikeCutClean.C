@@ -3,7 +3,7 @@ void PlotAllOAPosWithCAFLikeCutClean(){
 	//this is the file obtained at the very end of geoEff analysis
 	//i.e after having run FDHadronGeoEff, FDMuonGeoEff and the Etrim Analysis and after we summed together each individual file obtained after Etrim analysis
 	// shortly this file contains ALL FDevents (obtained from all available ntuples) translated to ND with hadron and geo eff applied and all of the analysis cuts (like CAFLikeWeight, FDEventRateAtND etc)
-	TFile* FileGeoEff = new TFile("RootFilesEtrim/AllOAPosWithFDEvRateEtrimSummed_histograms_NoCoeffsApplied_NoOscillatedSpectrum_CorrectPmuWeighted_EventsAlwaysScaleTo1OverEvAtOAPos_CAFLikeWeight_2Dhistograms.root", "READ");
+	TFile* FileGeoEff = new TFile("AllFDEvents_AllOAPosWithFDEvRate_EtrimSummed_histograms_NoOscillatedSpectrum.root", "READ");
 	//replace the file with the "with oscillations" file if interested in the oscillated scenario
 	FileGeoEff->cd();
 
