@@ -13,23 +13,37 @@ The information below tries to give an overview of the several steps used in the
 ## Analysis sketch
 
 ```
-| -------------------------------                    ------------------------------------------               -------------------------------------------
-| 0. FD neutrinos simulations   |                    | 1. Hadron Geom. Eff. of FD Events       |              | 2. Muon Geom Eff. of FD Events          |
-| ->(FD ntuples)                |                    |  in the ND -> OutputHadronGeoEff.root   |              | in the ND -> OutputMuonFDGeoEff.root    |
-|                               |                    |                                         |              |                                         |
-| MyEnergyAnalysis.cc           |                    | runGeoEffFDEvtSim.cpp                   |              | FD_maketree.py                          |
-| -> From Flynn's repository    |                    | -> this repository                      |              | -> this repository                      |
-|                               |                    |                                         |              |                                         |
-|                               | ---------------->  |                                         | -----------> |                                         |
-| - neutrino interaction type   |                    |  - throws FD event in ND at diff. vtxX  |              |  - throws events that passed the hadrons|
-| - neutrino energy             |                    |   and detPos                            |              | selection and evaluates muon efficiency |
-| - hadronic energy deposits    |                    |                                         |              |                                         |
-|   - amount of E + coordinates |                    | - throws passing the hadron cuts        |              |     - uses a NN which take the muon     |
-| - muon energy                 |                    |     - trim energy per throw             |              | momentum and position vector of each    |
-|   - muon track length,        |                    |     - vtxX + detPos                     |              | throw passing the hadron selection and  |
-|   start + end track           |                    |                                         |              | calulcates the muon efficiecny          |
-|                               |                    |                                         |              |                                         |
- --------------------------------                     ------------------------------------------               -------------------------------------------   
+| -------------------------------           ------------------------------------------               -----------------------------------------
+| 0. FD neutrinos simulations   |          | 1. Hadron Geom. Eff. of FD Events       |              | 2. Muon Geom Eff. of FD Events          |
+| ->(FD ntuples)                |          |  in the ND -> OutputHadronGeoEff.root   |              | in the ND -> OutputMuonFDGeoEff.root    |
+|                               |          |                                         |              |                                         |
+| MyEnergyAnalysis.cc           |          | runGeoEffFDEvtSim.cpp                   |              | FD_maketree.py                          |
+| -> From Flynn's repository    |          | -> this repository                      |              | -> this repository                      |
+|                               |          |                                         |              |                                         |
+|                               | ------>  |                                         | -----------> |                                         |
+| - neutrino interaction type   |          |  - throws FD event in ND at diff. vtxX  |              |  - throws events that passed the hadrons|
+| - neutrino energy             |          |   and detPos                            |              | selection and evaluates muon efficiency |
+| - hadronic energy deposits    |          |                                         |              |                                         |
+|   - amount of E + coordinates |          | - throws passing the hadron cuts        |              |     - uses a NN which take the muon     |
+| - muon energy                 |          |     - trim energy per throw             |              | momentum and position vector of each    |
+|   - muon track length,        |          |     - vtxX + detPos                     |              | throw passing the hadron selection and  |
+|   start + end track           |          |                                         |              | calulcates the muon efficiecny          |
+|                               |          |                                         |              |                                         |
+ --------------------------------           ------------------------------------------               ------------------------------------------  
+
+
+------------------------------------           ---------------------------------------              -----------------------------------------
+| 5. Compare selected FD events    |           | 4. Get results for ALL FD events    |              | 3. Get Etrim distribution of FD events|
+|  in the ND with PRISM            |           |                                     |              | selected (muon and hadron sel. cuts)  |
+|  linearly combined ND data       |           |  SumEtrimHistos.C                   |              |                                       |
+|                                  |           | -> this repository                  |              | NtupleOutVetoAndTrimE_....            |
+|PlotAllOAPosWithCAFLikeCutClean.C |           |                                     |              | -> this repository                    |
+| -> this repository               |           |- sum results from the otuput files  |              |                                       |
+|                                  |  <-----   |  produced in steps 3.               |  <-------    |  Selected FD events in the ND vs      | 
+|  - end comparison to check       |           |                                     |              | Etrim vs off-axis position            |
+|   final result                   |           |                                     |              |                                       |
+|                                  |           |                                     |              |                                       |
+------------------------------------           ---------------------------------------               ----------------------------------------  
 ```
 
 
