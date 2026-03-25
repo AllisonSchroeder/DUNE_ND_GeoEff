@@ -184,7 +184,7 @@ def processFiles(f):
                 this_vtx_x=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-LAr_position[det_pos]
                 this_vtx_y=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
                 this_vtx_z=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
-                this_p=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
+                #this_p=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos] #this should be in the throws loop
 
                 #Check which throws are in the FV. throws_FV is a boolean array with one element per throw. #make sure that len(throwsFD["throwRot"][0])=4096
                 throws_FV=isFV_vec([this_vtx_x]*len(throwsFD["throwRot"][0]),throwsFD["throwVtxY"][0]-offset[1],throwsFD["throwVtxZ"][0]-offset[2])
@@ -217,7 +217,9 @@ def processFiles(f):
                     # (bit in bitfield is 1) and the throw was in the fiducial volume.
                     if FV_cut: thisEff+=np.sum(np.logical_and(bitfield, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
                     else: thisEff+=np.sum(bitfield)
-
+                    
+                    this_p=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
+                    
                     # print("Y:",end=" ")
                     # print(throwsFD["throwVtxY"][0][i_bitfield*64:(i_bitfield+1)*64])
                     # print("Z:",end=" ")
