@@ -61,7 +61,7 @@ def isContained(x, y, z) :
     return True
 
 FV_cut=True
-LAr_position=[0.]
+LAr_position=[-3000.]
 # LAr_position=[-2800.,-1400.,0.]
 # LAr_position=[-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-1600.,-1375.,-1200.,-975.,-800.,-575.,-400.,-175.,0.]
 # vertex_position=[-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.]
@@ -187,14 +187,15 @@ def processFiles(f):
 
                 
                 this_p_init=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos] #this should be in the throws loop
-                this_vtx_x=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-LAr_position[det_pos]
+                this_vtx_x = FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]
+                this_vtx_x_shifted=this_vtx_x-LAr_position[det_pos]
                 this_vtx_y=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
                 this_vtx_z=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
                 #print(f'Initial Muon Momentum (this_p_init): {this_p_init}')
                 #print(f'Initial Vertex Position (this_vtx_x, this_vtx_y, this_vtx_z): ({this_vtx_x}, {this_vtx_y}, {this_vtx_z})')
 
                 #Check which throws are in the FV. throws_FV is a boolean array with one element per throw. #make sure that len(throwsFD["throwRot"][0])=4096
-                throws_FV=isFV_vec([this_vtx_x]*len(throwsFD["throwRot"][0]),throwsFD["throwVtxY"][0]-offset[1],throwsFD["throwVtxZ"][0]-offset[2])
+                throws_FV=isFV_vec([this_vtx_x_shifted]*len(throwsFD["throwRot"][0]),throwsFD["throwVtxY"][0]-offset[1],throwsFD["throwVtxZ"][0]-offset[2])
 
                 # print(this_vtx_x)
                 # print(throwsFD["throwVtxY"][0]-offset[1])
@@ -226,9 +227,6 @@ def processFiles(f):
                     else: thisEff+=np.sum(bitfield)
                     
                     this_p=this_p_init
-                    #this_vtx_x=this_vtx_x_init-LAr_position[det_pos]
-                    #this_vtx_y=this_vtx_y_init
-                    #this_vtx_z=this_vtx_z_init
                     
                     #if i_bitfield == 1: 
                     #    print(f'Second set of throws')
@@ -243,6 +241,7 @@ def processFiles(f):
                     # Get variables needed to evaluate muon neural network for each throw.
                     # x is not randomized. This is a convoluted way of repeating vtx_x the correct number of times
                     throw_x=[this_vtx_x]*len(throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64])
+                    throw_x_shifted = [this_vtx_x_shifted]*len(throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64])
                     # Get y for each random throw.
                     throw_y=throwsFD["throwVtxY"][0][i_bitfield*64:(i_bitfield+1)*64]-offset[1]
                     # Get z for each random throw
@@ -324,7 +323,7 @@ def processFiles(f):
                     #print(f'throw_x[20] = {throw_x[20]}')
 
                     # Features contains randomized momentum and vertex, to be used in neural network.
-                    features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x, throw_y, throw_z))
+                    features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x_shifted, throw_y, throw_z))
                     features=torch.as_tensor(features).type(torch.FloatTensor) # Convert to Pytorch tensor
                     with torch.no_grad(): # Evaluate neural network #neural network output is 2D array of probability a set of events being contained-detected, tracker-detected,
                         netOut=net(features) # or not detected #I don't use the 3rd column (not-detected probability)
