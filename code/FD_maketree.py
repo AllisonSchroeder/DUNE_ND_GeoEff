@@ -121,6 +121,8 @@ def processFiles(f):
     # Event loop
     print ("len(FD_sim_Results['hadron_throw_result_LAr']) ", len(FD_sim_Results['hadron_throw_result_LAr']))
     for i_event in range(len(FD_sim_Results['hadron_throw_result_LAr'])):
+        #if i_event!=1:
+        #    continue
         print(" length: ", len(FD_sim_Results['hadron_throw_result_LAr']))
         event=FD_sim_Results['hadron_throw_result_LAr'][i_event]
         print("event", event)
@@ -174,6 +176,8 @@ def processFiles(f):
             #for vtx_pos in [0,21]: #21 is the last x-position index
             #     print("vertex pos=",end="")
             #     print(effValues['ND_LAr_vtx_pos'][vtx_pos])
+                #if vtx_pos != 25:
+                #    continue
 
                 # Accumulators for efficiency calculation
                 thisEff=0. # Hadronic efficiency
@@ -181,10 +185,13 @@ def processFiles(f):
                 thisEff_contained=0. # Contained muon efficiency
                 thisEff_combined=0. # Combined efficiency
 
+                
+                this_p_init=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos] #this should be in the throws loop
                 this_vtx_x=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-LAr_position[det_pos]
                 this_vtx_y=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
                 this_vtx_z=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
-                #this_p=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos] #this should be in the throws loop
+                #print(f'Initial Muon Momentum (this_p_init): {this_p_init}')
+                #print(f'Initial Vertex Position (this_vtx_x, this_vtx_y, this_vtx_z): ({this_vtx_x}, {this_vtx_y}, {this_vtx_z})')
 
                 #Check which throws are in the FV. throws_FV is a boolean array with one element per throw. #make sure that len(throwsFD["throwRot"][0])=4096
                 throws_FV=isFV_vec([this_vtx_x]*len(throwsFD["throwRot"][0]),throwsFD["throwVtxY"][0]-offset[1],throwsFD["throwVtxZ"][0]-offset[2])
@@ -218,7 +225,14 @@ def processFiles(f):
                     if FV_cut: thisEff+=np.sum(np.logical_and(bitfield, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
                     else: thisEff+=np.sum(bitfield)
                     
-                    this_p=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
+                    this_p=this_p_init
+                    #this_vtx_x=this_vtx_x_init-LAr_position[det_pos]
+                    #this_vtx_y=this_vtx_y_init
+                    #this_vtx_z=this_vtx_z_init
+                    
+                    #if i_bitfield == 1: 
+                    #    print(f'Second set of throws')
+                    #    print(f'	this_p[0] = {this_p[0]}')
                     
                     # print("Y:",end=" ")
                     # print(throwsFD["throwVtxY"][0][i_bitfield*64:(i_bitfield+1)*64])
@@ -249,6 +263,13 @@ def processFiles(f):
                     decayToVertex=[this_vtx_x-decayXdetCoord,this_vtx_y-decayYdetCoord,this_vtx_z-decayZdetCoord]
                     # Vector from neutrino production point to randomly thrown vertex.
                     decayToTranslated=[[throw_x[i]-decayXdetCoord, throw_y[i]-decayYdetCoord, throw_z[i]-decayZdetCoord] for i in range(len(throw_x))]
+                    
+                    #if i_bitfield == 0:
+                    #    print(f'First set of throws')
+                    #    print(f'	throw position 0 ({throw_x[0]}, {throw_y[0]}, {throw_z[0]})')
+                    #    print(f'	decayToVertex = {decayToVertex}')
+                    #    print(f'	decayToTranslated[0] = {decayToTranslated[0]}')	
+                    #    print(f' 	decayToTranslated[0] - decayToVertex = {np.subtract(decayToTranslated[0],decayToVertex)}')
 
                     magDecayToVertex=np.sqrt(np.sum(np.square(decayToVertex)))
                     magDecayToTranslated=np.sqrt(np.sum(np.square(decayToTranslated), axis=1))
@@ -256,7 +277,10 @@ def processFiles(f):
                     translationAngle=np.divide(translationAngle, np.multiply(magDecayToVertex,magDecayToTranslated));
                     #for angleval in translationAngle: if angleval<=-1 or angleval>=1: print(i_event, angleval)
                     translationAngle = np.arccos(translationAngle);
-                    translationAxis = np.cross(decayToTranslated, decayToVertex)
+                    translationAxis = np.cross(decayToVertex, decayToTranslated)
+                    #if i_bitfield == 0:
+                    #    print(f'translationAxis = {translationAxis[0]}') 
+                        
 
                     translationAxis = [ thisV/np.linalg.norm(thisV) if np.linalg.norm(thisV) != 0 else np.zeros_like(thisV) for thisV in translationAxis]
                     translation_rot_vec = np.multiply(translationAxis, translationAngle[...,None])
@@ -270,11 +294,34 @@ def processFiles(f):
                     # Get rotation matrices due to:
                     # Vertex translation (which "rotates" the average neutrino direction)
                     translation_rot=R.from_rotvec(translation_rot_vec)
+                    
                     # Random phi rotation around average neutrino direction
                     phi_rot=R.from_rotvec(phi_rot_vec)
                     # Rotate momentum
                     this_p=translation_rot.apply(this_p)
+                    #if i_bitfield == 0:
+                    #    #print(f'First set of throws')
+                    #    print(f'	throw position 0 ({throw_x[0]}, {throw_y[0]}, {throw_z[0]})')
+                    #   #print(f'	decayToVertex = {decayToVertex}')
+                    #   print(f'	translation axis of rotation: {translationAxis[0]}')
+                    #   print(f'	translation angle [0]: {translationAngle[...,None][0]}')
+                    #    print(f'	np.linalg.norm(this_p[0]): {np.linalg.norm(this_p[0])}')
+                    #   print(f'	this_p[0] after translation rotation applied: {this_p[0]}')
                     this_p=phi_rot.apply(this_p)
+                    #if i_bitfield == 0:
+                    #    print(f'	throw rotation angle [0]: {throw_phi[...,None][0]}')
+                    #    print(f'	decayToTranslated[0] = {decayToTranslated[0]}')	
+                    #    print(f'	np.linalg.norm(this_p[0]): {np.linalg.norm(this_p[0])}')
+                    #    print(f'	this_p[0] after throw rotation applied: {this_p[0]}')
+                    #    #print(f'	this_p[-1] after throw rotation applied: {this_p[-1]}')
+                    
+                    
+                    #Shift the vertex to on-axis for the NN
+                    #this_vtx_x=this_vtx_x-LAr_position[det_pos]
+                    #throw_x=[this_vtx_x]*len(throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64])
+                    #print(f"this_vtx_x = {this_vtx_x}")
+                    #print(f"throw_x[0] = {throw_x[0]}")
+                    #print(f'throw_x[20] = {throw_x[20]}')
 
                     # Features contains randomized momentum and vertex, to be used in neural network.
                     features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x, throw_y, throw_z))
