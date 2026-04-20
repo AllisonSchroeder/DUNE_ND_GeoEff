@@ -1,13 +1,13 @@
 # Instruction for running translation and rotations on FD n-tuples
 
-Prerequisite: [Produce Ntuple from DUNE FD MC files](https://github.com/weishi10141993/myntuples#produce-ntuple-from-dune-fd-mc-files). The produced FD n-tuples will be used as input files for the following program to run.
+Prerequisite: [Produce Ntuple from DUNE FD MC files](https://github.com/weishi10141993/myntuples#produce-ntuple-from-dune-fd-mc-files). The produced FD n-tuples will be used as input files for the following program to run. (Add reference to Flynn's Ntuples)
 
 [First time only]
 ```
-cd /dune/app/users/<your_username>
+cd /exp/dune/app/users/<your_username>
 mkdir NDEff (first time only)
 cd NDEff
-git clone --recurse-submodules -b FD_Wei https://github.com/weishi10141993/DUNE_ND_GeoEff.git      # Get geoEff library
+git clone -b master https://github.com/AllisonSchroeder/DUNE_ND_GeoEff.git      # Get geoEff library
 # Note for git version (git --version) before 2.13, use: git clone --recursive -b FD_Wei https://github.com/weishi10141993/DUNE_ND_GeoEff.git
 cd DUNE_ND_GeoEff
 source setup.sh                                                                                    # Necessary setups for build
