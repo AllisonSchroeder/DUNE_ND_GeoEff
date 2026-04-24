@@ -479,12 +479,13 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   for (int i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
   { HistOAPos[i_iwritten] = new TH1D(Form("HistOAPos_FDEvt_%d", i_iwritten), Form("HistOAPos_FDEvt_%d", i_iwritten), 67, -30.5, 3);
 
+    t_effTree->GetEntry(i_iwritten); 
+
       int i_entry = tot_size * i_iwritten; //tot_size = nr of vtxX positions
       cout<<" i_ entry = "<<i_entry<<endl;
 
         for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ ) //i_entry goes from evNr*nr of vtxXpositions to nrOf vtxX positon * (evNr+1) effectively a loop over nrvtxX positions for diff events
         {
-          t_effTree->GetEntry(i_entry);
           t_effValues->GetEntry(i_entry);
 
             //cout<<" iev = "<< i_iwritten<<"  ND_LAr_vtx_pos " << ND_LAr_vtx_pos<<" i_entry: "<<i_entry<<endl;
@@ -548,6 +549,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
       Int_t i_vtxX_plot=0;
 
       t_effMu->GetEntry(i_iwritten);
+      t_effTree->GetEntry(i_iwritten);
 
       nPassThrowsPerEvent = 0;
 
@@ -561,9 +563,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
           Int_t i_entry = tot_size * i_iwritten;
           //cout<<" i entry: "<<i_entry<<endl;
-          for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ )
+          for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ ) //WHAT IS i_entry REFERING TO?
           {
-            t_effTree->GetEntry(i_entry);
             t_effValues->GetEntry(i_entry);
 
             //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f " <<totEnergyFDatND_f<<endl;
@@ -670,6 +671,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
        Int_t iOAPostAtVtxX = 0;
 
        t_effMu->GetEntry(i_iwritten);
+       t_effTree->GetEntry(i_iwritten);
 
        nPassThrowsPerEvent = 0;
 
@@ -694,7 +696,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
            for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ )
            {
-             t_effTree->GetEntry(i_entry);
              t_effValues->GetEntry(i_entry);
 
              //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f " <<totEnergyFDatND_f<<endl;
