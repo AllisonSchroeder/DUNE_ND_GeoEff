@@ -479,7 +479,19 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   for (int i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
   { HistOAPos[i_iwritten] = new TH1D(Form("HistOAPos_FDEvt_%d", i_iwritten), Form("HistOAPos_FDEvt_%d", i_iwritten), 67, -30.5, 3);
 
-    t_effTree->GetEntry(i_iwritten); 
+    t_effTree->GetEntry(i_iwritten);
+
+    hist_EnuFDEnergy->Fill(ND_Gen_numu_E);
+    EnuTrue[i_iwritten] = ND_Gen_numu_E; 
+    LepMomTot =sqrt(pow((*xyz_mom)[0][0][0],2)+pow((*xyz_mom)[0][0][1],2)+pow((*xyz_mom)[0][0][2],2) );
+    TotalLeptonMom[i_iwritten] = LepMomTot;
+    hist_TotalMuEnergy->Fill(LepMomTot);
+    cout<<" Enu = "<<ND_Gen_numu_E<<" Evis = "<<ND_E_vis_true<<" Lep mom " <<LepMomTot<<" mu energy: "<<muonEdep_f<< endl;
+    hist_visEnuFDEnergy->Fill(ND_E_vis_true);
+		//fill osc histos
+		hist_EnuFDEnergy_Osc->Fill(ND_Gen_numu_E, calc->P(14,14,ND_Gen_numu_E));
+    //hist_TotalMuEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
+    //hist_visEnuFDEnergy_Osc->Fill(ND_E_vis_true, calc->P(14,14,ND_Gen_numu_E));
 
       int i_entry = tot_size * i_iwritten; //tot_size = nr of vtxX positions
       cout<<" i_ entry = "<<i_entry<<endl;
@@ -489,19 +501,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
           t_effValues->GetEntry(i_entry);
 
             //cout<<" iev = "<< i_iwritten<<"  ND_LAr_vtx_pos " << ND_LAr_vtx_pos<<" i_entry: "<<i_entry<<endl;
-            if(i_entry<nFDEvents){
-                hist_EnuFDEnergy->Fill(ND_Gen_numu_E);
-                EnuTrue[i_entry] = ND_Gen_numu_E;
-                LepMomTot =sqrt(pow((*xyz_mom)[0][0][0],2)+pow((*xyz_mom)[0][0][1],2)+pow((*xyz_mom)[0][0][2],2) );
-                TotalLeptonMom[i_entry] = LepMomTot;
-                hist_TotalMuEnergy->Fill(LepMomTot);
-                cout<<" Enu = "<<ND_Gen_numu_E<<" Evis = "<<ND_E_vis_true<<" Lep mom " <<LepMomTot<<" mu energy: "<<muonEdep_f<< endl;
-                hist_visEnuFDEnergy->Fill(ND_E_vis_true);
-		            //fill osc histos
-		            hist_EnuFDEnergy_Osc->Fill(ND_Gen_numu_E, calc->P(14,14,ND_Gen_numu_E));
-            		//hist_TotalMuEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
-            		//hist_visEnuFDEnergy_Osc->Fill(ND_E_vis_true, calc->P(14,14,ND_Gen_numu_E));
-            }
 
             if(ND_LAr_vtx_pos == -196.45) {//only want to fill the histos for 1 vtxX
 
