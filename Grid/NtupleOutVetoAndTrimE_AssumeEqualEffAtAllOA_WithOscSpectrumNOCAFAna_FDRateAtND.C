@@ -476,7 +476,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
   double weightCAFLike[nFDEvents]; // this is going to be a weight similar to CAFs: if Edep/tracklength > 3 MeV / cm || trackLength <100 cmm then the muon is not reco -> Selected Mu =0 -> mu eff = 0;
 
-  for (int i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
+  for (int i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++) //looping over events
   { HistOAPos[i_iwritten] = new TH1D(Form("HistOAPos_FDEvt_%d", i_iwritten), Form("HistOAPos_FDEvt_%d", i_iwritten), 67, -30.5, 3);
 
     t_effTree->GetEntry(i_iwritten);
@@ -497,7 +497,9 @@ void ProcessFile(TFile *fHad, TFile *fMu){
       cout<<" i_ entry = "<<i_entry<<endl;
 
         for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ ) //i_entry goes from evNr*nr of vtxXpositions to nrOf vtxX positon * (evNr+1) effectively a loop over nrvtxX positions for diff events
-        {
+        { 
+          /*We are looping through the entries in a "flattened" Ttree: t_effValues has a total of #events*#vtxXpositions*#dtctrPos. 
+                The first #vtxXpositions*#dtctrPos belong to event 0, the next #vtxXpositions*#dtctrPos belog to event 1, etc. */
           t_effValues->GetEntry(i_entry);
 
             //cout<<" iev = "<< i_iwritten<<"  ND_LAr_vtx_pos " << ND_LAr_vtx_pos<<" i_entry: "<<i_entry<<endl;
@@ -511,7 +513,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
               weightCAFLike[i_iwritten] = 1.;
               if(muonTrackLength_f < 100. || muonEdep_f/muonTrackLength_f > 3.){
                  cout<<"** this event will not be selected!! "<<" ev nr "<<i_iwritten<<" muon e dep: "<<muonEdep_f<<" muon track length: "<<muonTrackLength_f<<endl;
-                 weightCAFLike[i_iwritten] = 0.;
+                 //cout<< "Commented out weightCAFLike for muon track length temporarily. If you see this, you need to remove the comment" << endl;
+                 weightCAFLike[i_iwritten] = 0.; // TEMPORARILY COMMENTED OUT!! MAKE SURE TO REMOVE COMMENT
               }
 
 
@@ -537,68 +540,51 @@ void ProcessFile(TFile *fHad, TFile *fMu){
     AllThrowInfo.resize(nFDEvents);
     // start the loop with efficiencies etc
 
-    for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
+    /*This is the loop where for each event and each vtxX, trimmed hadron energy (Etrim), the muon energy, and probability that the muon is contained or tracker matched of the throws 
+        that passed the hadronic contaiment cut are put into a structure (info) to allow them to be accessed to fill histograms later.  */
+      //loop over all of the FD events:
+    for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++) 
     {
       cout<<" i_iwritten: "<<i_iwritten<<" weight CAF like: "<<weightCAFLike[i_iwritten]<<endl;
+
+      //Why skip events with high muon energy? Are these muon events fully contained in FD? Would they ever pass the muon selection in the ND?
       if(TotalLeptonMom[i_iwritten] > 20) {
          cout<<" Emu > 20 GeV, Emu = "<<TotalLeptonMom[i_iwritten]<<" not interested in so high energies, skip event " <<endl;
          continue;
       }
 
-      Int_t i_vtxX_plot=0;
-
       t_effMu->GetEntry(i_iwritten);
       t_effTree->GetEntry(i_iwritten);
 
-      nPassThrowsPerEvent = 0;
+      AllThrowInfo[i_iwritten].resize(vtxX->size());
+      cout<< "vtxX->size()  = " << vtxX->size() << endl;
 
-      AllThrowInfo[i_iwritten].resize(a_ND_vtx_vx_vec.size());
+      int NumThrowsCounter = 0;
 
-        for (Double_t i_ND_LAr_vtx_pos: a_ND_vtx_vx_vec)
+        for (int i_ND_LAr_vtx_pos = 0; i_ND_LAr_vtx_pos < vtxX->size(); i_ND_LAr_vtx_pos++ )
         {
+          Int_t hadEntry = vtxX->size()*i_iwritten+i_ND_LAr_vtx_pos; //because of how t_effValues is structured, we need to skip the previous events' entries in t_effValues, so we use this variable to do so.
+          t_effValues->GetEntry(hadEntry);
 
-          i_vtxX_plot +=1;
+          //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f " <<totEnergyFDatND_f<<endl;
 
+          int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
+          for (Int_t ithrow = NumThrowsCounter; ithrow < nthrowsToLoop+NumThrowsCounter; ithrow++ ){ 
+	          ThrowInfo info;
 
-          Int_t i_entry = tot_size * i_iwritten;
-          //cout<<" i entry: "<<i_entry<<endl;
-          for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ ) //WHAT IS i_entry REFERING TO?
-          {
-            t_effValues->GetEntry(i_entry);
-
-            //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f " <<totEnergyFDatND_f<<endl;
-
-            if ( ND_LAr_vtx_pos == i_ND_LAr_vtx_pos ){
-
-              if(i_vtxX_plot == 1){
-                nPassThrowsPerVtx[i_vtxX_plot-1] = 0;
-                nPassThrowsPerVtx[i_vtxX_plot] = nPassThrowsPerEvent;
-              }
-              else
-                nPassThrowsPerVtx[i_vtxX_plot]=nPassThrowsPerEvent;
-
-              // nPassThrowsPerVtx[1] = nPassThrowsPerEvent; //WRONG!!!
-              int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
-
-              for (Int_t ithrow = 0; ithrow < nthrowsToLoop; ithrow++ ){
-	              ThrowInfo info;
-
-              if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
+            if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
                   cout<<" skipping this throw, Ehad = "<<TrimEnergyEventsPass->at(ithrow)*1E-3<<" GeV, > 20 GeV"<<endl;
                   continue;
                 }
 
-                info.Etrim = TrimEnergyEventsPass->at(ithrow);  //save trimmed hadron energy per throw
-                info.Emu   = TotalLeptonMom[i_iwritten]*1E3;
-                info.weightPmuon = (*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0];
+            info.Etrim = TrimEnergyEventsPass->at(ithrow-NumThrowsCounter);  //save trimmed hadron energy per throw
+            info.Emu   = TotalLeptonMom[i_iwritten]*1E3;
+            info.weightPmuon = (*weightPmuon)[ithrow+1][0]; //The first entry in weightPmuon is empty, so we have to skip 1 entry to get to the correct one, hence the ithrow+1
 
-                AllThrowInfo[i_iwritten][i_vtxX_plot - 1].push_back(info);
+            AllThrowInfo[i_iwritten][i_ND_LAr_vtx_pos].push_back(info);
 
-
-              } //end throw
-            }// end vtx selection
-          }//end ientry
-        }//end vtx pos inside LAr
+          } //end throw
+        }// end vtx loop
     }//end iwritten
 
     TH2D* AllThrownEventsVsOAPosVsTotalETrim[nFDEvents];
@@ -922,8 +908,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 }
 
 int main(int argc, char const *argv[]){
-
-
 
   if (argc < 3) {
   std::cerr << "Usage: " << argv[0] << " <file1.root> <file2.root>" << std::endl;
