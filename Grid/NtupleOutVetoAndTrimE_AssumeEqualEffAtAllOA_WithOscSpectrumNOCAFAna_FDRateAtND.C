@@ -553,38 +553,69 @@ void ProcessFile(TFile *fHad, TFile *fMu){
          continue;
       }
 
+      Int_t i_vtxX_plot=0;
+
       t_effMu->GetEntry(i_iwritten);
-      t_effTree->GetEntry(i_iwritten);
 
-      AllThrowInfo[i_iwritten].resize(vtxX->size());
-      cout<< "vtxX->size()  = " << vtxX->size() << endl;
+      nPassThrowsPerEvent = 0;
 
-      int NumThrowsCounter = 0;
+      AllThrowInfo[i_iwritten].resize(a_ND_vtx_vx_vec.size());
 
-        for (int i_ND_LAr_vtx_pos = 0; i_ND_LAr_vtx_pos < vtxX->size(); i_ND_LAr_vtx_pos++ )
+        for (Double_t i_ND_LAr_vtx_pos: a_ND_vtx_vx_vec)
         {
-          Int_t hadEntry = vtxX->size()*i_iwritten+i_ND_LAr_vtx_pos; //because of how t_effValues is structured, we need to skip the previous events' entries in t_effValues, so we use this variable to do so.
-          t_effValues->GetEntry(hadEntry);
 
-          //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f " <<totEnergyFDatND_f<<endl;
+          i_vtxX_plot +=1;
 
-          int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
-          for (Int_t ithrow = NumThrowsCounter; ithrow < nthrowsToLoop+NumThrowsCounter; ithrow++ ){ 
-	          ThrowInfo info;
 
-            if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
+          Int_t i_entry = tot_size * i_iwritten;
+          //cout<<" i entry: "<<i_entry<<endl;
+          for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ )
+          {
+            t_effTree->GetEntry(i_entry);
+            t_effValues->GetEntry(i_entry);
+
+            //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f " <<totEnergyFDatND_f<<endl;
+
+            if ( ND_LAr_vtx_pos == i_ND_LAr_vtx_pos ){
+
+
+              nPassThrowsPerEvent+=NPassedThrows;
+
+              if(i_vtxX_plot == 1){
+                nPassThrowsPerVtx[i_vtxX_plot-1] = 0;
+                nPassThrowsPerVtx[i_vtxX_plot] = nPassThrowsPerEvent;
+              }
+              else
+                nPassThrowsPerVtx[i_vtxX_plot]=nPassThrowsPerEvent;
+
+              // nPassThrowsPerVtx[1] = nPassThrowsPerEvent; //WRONG!!!
+              int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
+
+               //cout<<" i_vtxX_plot "<<i_vtxX_plot<<" npassed throws: "<<NPassedThrows<<" passed throws / event "<<nPassThrowsPerEvent<<" weight P mu size: "<< (*weightPmuon).size()<<endl;
+              //     <<" nPassThrowsPerVtx[i_vtxX_plot] "<<nPassThrowsPerVtx[i_vtxX_plot]
+              //     <<"  nPassThrowsPerVtx[i_vtxX_plot -1] "<<  nPassThrowsPerVtx[i_vtxX_plot -1]  <<" weight P mu size: "<< (*weightPmuon).size()<<endl;
+              for (Int_t ithrow = 0; ithrow < nthrowsToLoop; ithrow++ ){
+                ThrowInfo info;
+
+                if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
                   cout<<" skipping this throw, Ehad = "<<TrimEnergyEventsPass->at(ithrow)*1E-3<<" GeV, > 20 GeV"<<endl;
                   continue;
                 }
 
-            info.Etrim = TrimEnergyEventsPass->at(ithrow-NumThrowsCounter);  //save trimmed hadron energy per throw
-            info.Emu   = TotalLeptonMom[i_iwritten]*1E3;
-            info.weightPmuon = (*weightPmuon)[ithrow+1][0]; //The first entry in weightPmuon is empty, so we have to skip 1 entry to get to the correct one, hence the ithrow+1
+                info.Etrim = TrimEnergyEventsPass->at(ithrow);  //save trimmed hadron energy per throw
+                info.Emu   = TotalLeptonMom[i_iwritten]*1E3;
+                info.weightPmuon = (*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0];
+                // info.muContained = (*muContained)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0];
 
-            AllThrowInfo[i_iwritten][i_ND_LAr_vtx_pos].push_back(info);
+              //  cout<<" ithrow = "<<ithrow<< " nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1 = "<<nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1<< " p value: "<< (*weightPmuon)[nPassThrowsPerVtx[i_vtxX_plot-1]+ ithrow+1][0]<<endl;
 
-          } //end throw
-        }// end vtx loop
+                AllThrowInfo[i_iwritten][i_vtxX_plot - 1].push_back(info);
+
+
+              } //end throw
+            }// end vtx selection
+          }//end ientry
+        }//end vtx pos inside LAr
     }//end iwritten
 
     TH2D* AllThrownEventsVsOAPosVsTotalETrim[nFDEvents];
