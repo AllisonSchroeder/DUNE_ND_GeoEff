@@ -14,13 +14,13 @@ to setup things interactively:
 
 2. (First time only) Setup directory:
 
-  2.1 Move to your directory ```cd /exp/dune/app/users/$USER/NDEff```
-
-  2.2 Make directory for muon code: ```mkdir MuonCode```
-
-  2.3 Move to muon code directory: ```cd MuonCode```
-
-  2.3 Clone muon code branch ```git clone -b MuonCode https://github.com/AllisonSchroeder/DUNE_ND_GeoEff.git```
+    2.1 Move to your directory ```cd /exp/dune/app/users/$USER/NDEff```
+   
+    2.2 Make directory for muon code: ```mkdir MuonCode```
+   
+    2.3 Move to muon code directory: ```cd MuonCode```
+   
+    2.4 Clone muon code branch: ```git clone -b MuonCode https://github.com/AllisonSchroeder/DUNE_ND_GeoEff.git```
 
 2. cd PATHToMuonEffCode: ```cd  /exp/dune/app/users/$USER/NDEff/MuonCode/DUNE_ND_GeoEff/code```
    
