@@ -31,7 +31,7 @@ To (re)run program,
 ```
 cd ../bin
 # Usage: ./runGeoEffFDEvtSim inputFDntuple
-./runGeoEffFDEvtSim /dune/app/users/weishi/FDEff/srcs/myntuples/myntuples/MyEnergyAnalysis/myntuple.root
+./runGeoEffFDEvtSim /dune/app/users/<your_username>/FDEff/srcs/myntuples/myntuples/MyEnergyAnalysis/myntuple.root
 ```
 this will produce a root file containing throws and the hadron throw result.
 
