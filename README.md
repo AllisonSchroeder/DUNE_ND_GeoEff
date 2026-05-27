@@ -2,9 +2,17 @@
 
 Prerequisite: [Produce Ntuple from DUNE FD MC files](https://github.com/weishi10141993/myntuples#produce-ntuple-from-dune-fd-mc-files). The produced FD n-tuples will be used as input files for the following program to run. (Flynn Guo has previously made ntuple files to use, which can be located here: /pnfs/dune/persistent/users/flynnguo/myFDntuples)
 
+
+Open SL7 container:
+```
+/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash \
+-B /cvmfs,/exp,/nashome,/pnfs/dune,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid \
+/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest
+```
+
 [First time only]
 ```
-cd /exp/dune/app/users/<your_username>
+cd /exp/dune/app/users/$USER
 mkdir NDEff (first time only)
 cd NDEff
 git clone -b master https://github.com/AllisonSchroeder/DUNE_ND_GeoEff.git      # Get geoEff library
@@ -16,7 +24,7 @@ make -j geoEff                                                                  
 
 To (re)compile
 ```
-cd /dune/app/users/<your_username>/NDEff/DUNE_ND_GeoEff/
+cd /exp/dune/app/users/$USER/NDEff/DUNE_ND_GeoEff/
 #
 # In case you log out, need to source setup.sh to setup ROOT
 #
@@ -31,7 +39,7 @@ To (re)run program,
 ```
 cd ../bin
 # Usage: ./runGeoEffFDEvtSim inputFDntuple
-./runGeoEffFDEvtSim /dune/app/users/<your_username>/FDEff/srcs/myntuples/myntuples/MyEnergyAnalysis/myntuple.root
+./runGeoEffFDEvtSim /dune/app/users/$USER/FDEff/srcs/myntuples/myntuples/MyEnergyAnalysis/myntuple.root
 ```
 this will produce a root file containing throws and the hadron throw result.
 
@@ -59,7 +67,7 @@ nohup ./runGeoEffFDEvtSim >& out_throws_nohup.log &                             
 The output root file from running ```runGeoEffFDEvtSim``` can be used to calculate FD event hadron containment efficiency by running:
 
 ```
-cd /dune/app/users/weishi/NDEff/DUNE_ND_GeoEff
+cd /exp/dune/app/users/$USER/NDEff/DUNE_ND_GeoEff
 source setup.sh
 cd app
 root -l -b -q FDEffCalc.C
