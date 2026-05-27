@@ -11,12 +11,22 @@ and then the output file from hadron efficiency is used as an input for the muon
 
 to setup things interactively:
 1. use the container: ```/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/exp,/nashome,/pnfs/dune,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest```
-   
-2. cd PATHToMuonEffCode: ```cd  /exp/dune/app/users/icaracas/NDEff/DUNE_PRISM_GEC_ND/code```
+
+2. (First time only) Setup directory:
+
+  2.1 Move to your directory ```cd /exp/dune/app/users/$USER/NDEff```
+
+  2.2 Make directory for muon code: ```mkdir MuonCode```
+
+  2.3 Move to muon code directory: ```cd MuonCode```
+
+  2.3 Clone muon code branch ```git clone -b MuonCode https://github.com/AllisonSchroeder/DUNE_ND_GeoEff.git```
+
+2. cd PATHToMuonEffCode: ```cd  /exp/dune/app/users/$USER/NDEff/MuonCode/DUNE_ND_GeoEff/code```
    
 3. source the environment: ```source setup_NDcombEff.sh```
    
-4. Setup python (you can use `run_FDcombEff.sh`, which is used for submitting jobs on Fermi computers, as a guideline):
+4. (First time only) Setup python (you can use `run_FDcombEff.sh`, which is used for submitting jobs on Fermi computers, as a guideline): 
 
    4.1 Make directory with python env:
    ```bash
