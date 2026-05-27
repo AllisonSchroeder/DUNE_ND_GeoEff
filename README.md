@@ -35,10 +35,10 @@ to setup things interactively:
 
    4.2 Then install to this directory:
 ```bash
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env numpy==1.26.1```
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env uproot==5.1.2```
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env torch```
-/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env scipy==1.11.3```
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env numpy==1.26.1
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env uproot==5.1.2
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env torch
+/cvmfs/larsoft.opensciencegrid.org/products/python/v3_9_15/Linux64bit+3.10-2.17/bin/pip install --target=$(pwd)/my_python_env scipy==1.11.3
 ```
 5. Export PYTHONPATH
 ```export PYTHONPATH=$(pwd)/my_python_env:$PYTHONPATH```
