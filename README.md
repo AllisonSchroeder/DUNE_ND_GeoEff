@@ -27,7 +27,7 @@ source setupsForOsc.sh
 ```
 make
 ```
-## Run for with or without oscillations
+## 5. Run with or without oscillations
 for no oscillations:
 ```
 ./NtupleOutVetoAndTrimE_AssumeEqualEffAtAllOA_NOOscSpectrumNOCAFAna_FDRateAtND HadronOutputFile  MuonOutputFile
