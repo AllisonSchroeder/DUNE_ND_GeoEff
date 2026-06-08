@@ -17,7 +17,7 @@
 
 ## 3. Move to EtrimAnalysis Directory
 ```
-cd PATHToMuonEffCode: cd  /exp/dune/app/users/$USER/NDEff/EtrimAnalysis/DUNE_ND_GeoEff/Grid
+cd  /exp/dune/app/users/$USER/NDEff/EtrimAnalysis/DUNE_ND_GeoEff/Grid
 ```
 ## 4. Setup
 ```
