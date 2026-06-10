@@ -204,7 +204,8 @@ int main(int argc, char** argv)
   //------------------------------------------------------------------------------
   //
   // Choose ND_Lar detector and vtx within ND_LAr positions
-  vector<double> ND_LAr_dtctr_pos_vec;      // unit: cm, ND LAr detector off-axis choices for each FD evt
+  vector<double> ND_LAr_dtctr_pos_vec = {0, -175, -200, -400, -575, -800, -975, -1200, -1375, -1600, -1775, -2000, -2175, -2400, -2575, -2625, -2800, -2825, -2850};      // unit: cm, ND LAr detector off-axis choices for each FD evt
+  vector<double> ND_vtx_vx_vec;             // unit: cm, vtx x choices for each FD evt in ND_Lar volume
   vector<double> ND_vtx_vx_vec;             // unit: cm, vtx x choices for each FD evt in ND_Lar volume
   vector<double> ND_OffAxis_pos_vec;        // unit: cm, Off-Axis pos = ND_LAr_dtctr_pos_vec + ND_vtx_vx_vec;
 
@@ -212,8 +213,8 @@ int main(int argc, char** argv)
   // int vtx_vx_steps = 0;
 
   // Initialize first element as -999, to be replaced by a random off-axis nd pos in each evt below
-  ND_LAr_dtctr_pos_vec.clear();
-  ND_LAr_dtctr_pos_vec.emplace_back(0);
+  //ND_LAr_dtctr_pos_vec.clear();
+  //ND_LAr_dtctr_pos_vec.emplace_back(0);
 
   // Old algorithm chooseing ND off axis pos
   // if ( ND_Lar_dtctr_pos_new_stepsize > 0 && ND_Lar_dtctr_pos_new_stepsize <= OffAxisPoints[13] ) {
