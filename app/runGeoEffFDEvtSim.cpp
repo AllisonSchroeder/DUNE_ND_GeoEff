@@ -1223,8 +1223,8 @@ int main(int argc, char** argv)
         ND_OffAxis_Sim_hadronic_hit_xyz_vtx.emplace_back(ND_OffAxis_Sim_hadronic_hit);
 
         // if(vetoEnergyFDatND_float > 30)
-       // cout << "i_ND_off_axis_pos: " << i_ND_off_axis_pos << ", i_vtx_vx: " << i_vtx_vx << ", Ev: " << ND_Gen_numu_E << ", W: "<< ND_W << endl;
-        cout << ",------------------------ totEnergyFDatND: " << totEnergyFDatND_float<<" FD_True_hadronic_E = "<< FD_True_HadE<<" mu energy: "<<FD_Sim_mu_start_E<<" vis E = "<<ND_E_vis_true<<" Enu = "<<ND_Gen_numu_E << ", vetoEnergyFDatND: " << vetoEnergyFDatND_float << ", outEnergyFDatND: " << outEnergyFDatND_float << endl;
+        //cout << "i_ND_off_axis_pos: " << i_ND_off_axis_pos << ", i_vtx_vx: " << i_vtx_vx << ", Ev: " << ND_Gen_numu_E << ", W: "<< ND_W << endl;
+        //cout << ",------------------------ totEnergyFDatND: " << totEnergyFDatND_float<<" FD_True_hadronic_E = "<< FD_True_HadE<<" mu energy: "<<FD_Sim_mu_start_E<<" vis E = "<<ND_E_vis_true<<" Enu = "<<ND_Gen_numu_E << ", vetoEnergyFDatND: " << vetoEnergyFDatND_float << ", outEnergyFDatND: " << outEnergyFDatND_float << endl;
         vetoEnergyFDatND_vtx.emplace_back(vetoEnergyFDatND_float);
         totEnergyFDatND_vtx.emplace_back(totEnergyFDatND_float);
         outEnergyFDatND_vtx.emplace_back(outEnergyFDatND_float);
@@ -1455,7 +1455,7 @@ int main(int argc, char** argv)
 
                 if (throwfileVerbose) myfile << "        ND_LAr_dtctr_pos: " << ND_LAr_dtctr_pos << "cm,  ND_LAr_vtx_pos: " << ND_LAr_vtx_pos << ", Passed throws: " << hadronpass << ", tot. valid throws: " << validthrows << ", eff: " << ND_GeoEff << "\n\n";
                 //if (verbose)
-                cout << "        ND_LAr_dtctr_pos: " << ND_LAr_dtctr_pos << " cm,  ND_LAr_vtx_pos: " << ND_LAr_vtx_pos << " cm, Passed throws: " << hadronpass << ", tot. valid throws: " << validthrows <<"cross check validThrows: "<<validThrows << ", eff: " << ND_GeoEff << "\n\n";
+                //cout << "        ND_LAr_dtctr_pos: " << ND_LAr_dtctr_pos << " cm,  ND_LAr_vtx_pos: " << ND_LAr_vtx_pos << " cm, Passed throws: " << hadronpass << ", tot. valid throws: " << validthrows <<"cross check validThrows: "<<validThrows << ", eff: " << ND_GeoEff << "\n\n";
                 effValues->Fill();
 
                 // Calculate the meanEff
