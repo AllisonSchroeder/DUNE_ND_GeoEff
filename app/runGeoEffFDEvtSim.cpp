@@ -206,7 +206,6 @@ int main(int argc, char** argv)
   // Choose ND_Lar detector and vtx within ND_LAr positions
   vector<double> ND_LAr_dtctr_pos_vec = {0, -175, -200, -400, -575, -800, -975, -1200, -1375, -1600, -1775, -2000, -2175, -2400, -2575, -2625, -2800, -2825, -2850};      // unit: cm, ND LAr detector off-axis choices for each FD evt
   vector<double> ND_vtx_vx_vec;             // unit: cm, vtx x choices for each FD evt in ND_Lar volume
-  vector<double> ND_vtx_vx_vec;             // unit: cm, vtx x choices for each FD evt in ND_Lar volume
   vector<double> ND_OffAxis_pos_vec;        // unit: cm, Off-Axis pos = ND_LAr_dtctr_pos_vec + ND_vtx_vx_vec;
 
   // int ND_off_axis_pos_steps = 0;
