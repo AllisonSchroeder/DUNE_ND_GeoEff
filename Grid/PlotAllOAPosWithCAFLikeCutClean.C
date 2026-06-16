@@ -3,7 +3,7 @@ void PlotAllOAPosWithCAFLikeCutClean(){
 	//this is the file obtained at the very end of geoEff analysis
 	//i.e after having run FDHadronGeoEff, FDMuonGeoEff and the Etrim Analysis and after we summed together each individual file obtained after Etrim analysis
 	// shortly this file contains ALL FDevents (obtained from all available ntuples) translated to ND with hadron and geo eff applied and all of the analysis cuts (like CAFLikeWeight, FDEventRateAtND etc)
-	TFile* FileGeoEff = new TFile("AllFDEvents_AllOAPosWithFDEvRate_EtrimSummed_histograms_NoOscillatedSpectrum.root", "READ");
+	TFile* FileGeoEff = new TFile("AllOAPosWithFDEvRateForEtrue_EtrimSummed_histograms_NoCoeffsApplied_WithOscillatedSpectrum_CAFLikeWeight_2Dhistograms_withWeightPmuonChange.root", "READ");
 	//replace the file with the "with oscillations" file if interested in the oscillated scenario
 	FileGeoEff->cd();
 
@@ -14,7 +14,7 @@ void PlotAllOAPosWithCAFLikeCutClean(){
 	AllThrowsGeoEff->SetDirectory(0);
 
 
-	TH1D* AllGenEvGeoEffTrueE = (TH1D*) FileGeoEff->Get("hist_EnuFDEnergy");
+	TH1D* AllGenEvGeoEffTrueE = (TH1D*) FileGeoEff->Get("Oschist_EnuFDEnergy");
 	//===replace Get("hist_EnuFDEnergy" with Get("Oschist_EnuFDEnergy") if you are interested in the "oscillated scenario "
 	AllGenEvGeoEffTrueE->SetDirectory(0);
 
@@ -61,8 +61,8 @@ void PlotAllOAPosWithCAFLikeCutClean(){
 	TrueEnuGeoEffSameBins->Scale(1.0/TrueEnuGeoEffSameBins->Integral());
 
 
-	//this is the file with the PRISM Prediction, i.e what we want to be able to match with.
-	TFile* PRISMFile = new TFile("PRISMPred_ERecFromDepWithNeutronEnergyAndTrueEmu_NoSysts_NoOsc_FlatRunPlan_AllOAPos_correcPerFileWeight_NDEffVsEreco.root", "READ");
+	//this is the file with the PRISM Prediction, i.e what we want to be able to match with. //NoOsc: "PRISMPred_ERecFromDepWithNeutronEnergyAndTrueEmu_NoSysts_NoOsc_FlatRunPlan_AllOAPos_correcPerFileWeight_NDEffVsEreco.root"
+	TFile* PRISMFile = new TFile("PRISMPred_EdepWithNeutronEnergy_NoSysts_WithOsc_FlatRunPlan.root", "READ");
 	PRISMFile->cd();
 	// this is the ND Data at 293kA after Nd background has been subtracted
 	TH2D* SelectedEvPRISM = (TH2D*) PRISMFile->Get("numu_EvMatch_nom/FD_nu_numu/NDDataCorr2D_293kA");

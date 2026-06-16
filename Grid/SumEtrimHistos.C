@@ -88,12 +88,13 @@ void SumEtrimHistos(const TString& folderPath, const std::vector<TString>& keywo
 
 
     // Save the summed histograms to a new ROOT file
-    TFile outputFile("AllOAPosWithFDEvRateForEtrue_EtrimSummed_histograms_NoCoeffsApplied_WithOscillatedSpectrum_CAFLikeWeight_2Dhistograms.root", "RECREATE");
+    TFile outputFile("AllOAPosWithFDEvRateForEtrue_EtrimSummed_histograms_TEST_withMadisFiles.root", "RECREATE");
+    std::cout << "Writing summed histograms to output file" << std::endl;
     for (const auto& [keyword, summedHist] : summedHistograms) {
         if (summedHist) {
             summedHist->Write(); // Write each summed histogram
         }
     }
     outputFile.Close();
-    std::cout << "Summed histograms saved to NuOscEtrimSummed_histograms_TryAllntuplesFlynn_CoeffsNoOsc.root" << std::endl;
+    std::cout << "Summed histograms saved to AllOAPosWithFDEvRateForEtrue_EtrimSummed_histograms_NoCoeffsApplied_WithOscillatedSpectrum_CAFLikeWeight_2Dhistograms_withWeightPmuonChange.root" << std::endl;
 }

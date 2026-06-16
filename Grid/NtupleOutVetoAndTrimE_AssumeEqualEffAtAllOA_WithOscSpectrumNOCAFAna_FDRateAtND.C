@@ -268,7 +268,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   cout<<" called fdevrate fct"<<endl;
 
   // 0. FD: read event from FD MC ntuple: before earth curvature rotation
-  vector<Double_t> a_ND_off_axis_pos_vec = {0, -1.75, -2, -4, -5.75, -8, -9.75, -12, -13.75, -16, -17.75, -20, -21.75, -24, -25.75, -26.25, -28, -28.25, -28.5};
+  vector<Double_t> a_ND_off_axis_pos_vec = {0, -1.75, -2, -4, -5.75, -8, -9.75, -12, -13.75, -16, -17.75, -20, -21.75, -24, -25.75, -26.25, -28, -28.25, -28.5}; //{0};
   vector<Double_t> a_ND_vtx_vx_vec;
   vector<Double_t> OAPosition;
   // Generate six evenly spaced point in each non-dead region (NDFV between -200cm to 200cm as in ND CAFs)
@@ -449,8 +449,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 
 
   TGraph* PlotEfficiencyVsVtxX[nFDEvents];
-  // TGraph* PlotMuonEfficiencyVsVtxX[nFDEvents];
-  // TGraph* PlotMuTrackerEfficiencyVsVtxX[nFDEvents];
+  TGraph* PlotMuonEfficiencyVsVtxX[nFDEvents];
+  TGraph* PlotMuTrackerEfficiencyVsVtxX[nFDEvents];
   TGraph* PlotCombinedEfficiencyVsVtxX[nFDEvents];
   TGraph* EfficiencyVsOAPos[nFDEvents];
   // TH1D* HistOAPos = new TH1D("HistOAPos", "HistOAPos", 67, -30.5, 3);
@@ -493,50 +493,47 @@ void ProcessFile(TFile *fHad, TFile *fMu){
     //hist_TotalMuEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
     //hist_visEnuFDEnergy_Osc->Fill(ND_E_vis_true, calc->P(14,14,ND_Gen_numu_E));
 
-      int i_entry = tot_size * i_iwritten; //tot_size = nr of vtxX positions
-      cout<<" i_ entry = "<<i_entry<<endl;
+    for (int i_entry=tot_size*i_iwritten; i_entry < tot_size * (i_iwritten+1); i_entry++ ) //i_entry goes from evNr*nr of vtxXpositions to nrOf vtxX positon * (evNr+1) effectively a loop over nrvtxX positions for diff events
+    { 
+      /*We are looping through the entries in a "flattened" Ttree: t_effValues has a total of #events*#vtxXpositions*#dtctrPos. 
+              The first tot_size = #vtxXpositions*#dtctrPos belong to event 0, the next #vtxXpositions*#dtctrPos belog to event 1, etc. */
+      t_effValues->GetEntry(i_entry);
 
-        for (i_entry ; i_entry < tot_size * (i_iwritten+1); i_entry++ ) //i_entry goes from evNr*nr of vtxXpositions to nrOf vtxX positon * (evNr+1) effectively a loop over nrvtxX positions for diff events
-        { 
-          /*We are looping through the entries in a "flattened" Ttree: t_effValues has a total of #events*#vtxXpositions*#dtctrPos. 
-                The first #vtxXpositions*#dtctrPos belong to event 0, the next #vtxXpositions*#dtctrPos belog to event 1, etc. */
-          t_effValues->GetEntry(i_entry);
+      //cout<<" iev = "<< i_iwritten<<"  ND_LAr_vtx_pos " << ND_LAr_vtx_pos<<" i_entry: "<<i_entry<<endl;
 
-            //cout<<" iev = "<< i_iwritten<<"  ND_LAr_vtx_pos " << ND_LAr_vtx_pos<<" i_entry: "<<i_entry<<endl;
+      if(ND_LAr_vtx_pos == -196.45) {//only want to fill the histos for 1 vtxX
 
-            if(ND_LAr_vtx_pos == -196.45) {//only want to fill the histos for 1 vtxX
-
-              hist_FDTotEnergy->Fill(totEnergyFDatND_f);
-              hist_muEdep->Fill(muonEdep_f);
-              hist_muTrackLength->Fill(muonTrackLength_f);
-              cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f "<<totEnergyFDatND_f<<" mu energy: "<<muonEdep_f<<" mu Track Length: "<<muonTrackLength_f<< " Enu = "<<ND_Gen_numu_E<<endl;
-              weightCAFLike[i_iwritten] = 1.;
-              if(muonTrackLength_f < 100. || muonEdep_f/muonTrackLength_f > 3.){
-                 cout<<"** this event will not be selected!! "<<" ev nr "<<i_iwritten<<" muon e dep: "<<muonEdep_f<<" muon track length: "<<muonTrackLength_f<<endl;
-                 //cout<< "Commented out weightCAFLike for muon track length temporarily. If you see this, you need to remove the comment" << endl;
-                 weightCAFLike[i_iwritten] = 0.; // TEMPORARILY COMMENTED OUT!! MAKE SURE TO REMOVE COMMENT
-              }
-
-
-            }
-
-            //this is not needed anymore: i.e every events will be put in the same OA positions -> don't need this histo / event
-            Int_t i_detposInCoefRange = 0;
-            for (Double_t i_ND_LAr_dtctr_pos: a_ND_off_axis_pos_vec)
-            {
-              i_detposInCoefRange +=1;
-              // //calculate OAPos=vtx_x+det_pos
-              OAPos2 = ND_LAr_vtx_pos/100.0 + a_ND_off_axis_pos_vec[i_detposInCoefRange-1];
-              HistOAPos[i_iwritten]->Fill(OAPos2);
-            }
+        hist_FDTotEnergy->Fill(totEnergyFDatND_f);
+        hist_muEdep->Fill(muonEdep_f);
+        hist_muTrackLength->Fill(muonTrackLength_f);
+        cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f "<<totEnergyFDatND_f<<" mu energy: "<<muonEdep_f<<" mu Track Length: "<<muonTrackLength_f<< " Enu = "<<ND_Gen_numu_E<<endl;
+        weightCAFLike[i_iwritten] = 1.;
+        if(muonTrackLength_f < 100. || muonEdep_f/muonTrackLength_f > 3.){
+          cout<<"** this event will not be selected!! "<<" ev nr "<<i_iwritten<<" muon e dep: "<<muonEdep_f<<" muon track length: "<<muonTrackLength_f<<endl;
+          //cout<< "Commented out weightCAFLike for muon track length temporarily. If you see this, you need to remove the comment" << endl;
+          weightCAFLike[i_iwritten] = 0.; // TEMPORARILY COMMENTED OUT!! MAKE SURE TO REMOVE COMMENT
         }
-      HistOAPos[i_iwritten]->Write(Form("HistOAPos_FDEvt_%d", i_iwritten));
+
+
+      }
+
+      //this is not needed anymore: i.e every events will be put in the same OA positions -> don't need this histo / event
+      Int_t i_detposInCoefRange = 0;
+      for (Double_t i_ND_LAr_dtctr_pos: a_ND_off_axis_pos_vec)
+      {
+        i_detposInCoefRange +=1;
+        // //calculate OAPos=vtx_x+det_pos
+        OAPos2 = ND_LAr_vtx_pos/100.0 + a_ND_off_axis_pos_vec[i_detposInCoefRange-1];
+        HistOAPos[i_iwritten]->Fill(OAPos2);
+      }
     }
+    HistOAPos[i_iwritten]->Write(Form("HistOAPos_FDEvt_%d", i_iwritten));
+  }
 
 
 
 
-    std::vector<std::vector<std::vector<std::pair<float, float>>>> EtrimEmuValues; //store Etrim and Emu values for each event at each vtxX position
+    //std::vector<std::vector<std::vector<std::pair<float, float>>>> EtrimEmuValues; //store Etrim and Emu values for each event at each vtxX position
     AllThrowInfo.resize(nFDEvents);
     // start the loop with efficiencies etc
 
@@ -556,34 +553,56 @@ void ProcessFile(TFile *fHad, TFile *fMu){
       t_effMu->GetEntry(i_iwritten);
       t_effTree->GetEntry(i_iwritten);
 
-      AllThrowInfo[i_iwritten].resize(vtxX->size());
-      cout<< "vtxX->size()  = " << vtxX->size() << endl;
+      int numOApos = vtxX->size();
+
+      AllThrowInfo[i_iwritten].resize(numOApos);
+      cout<< "      There are " << numOApos << " off-axis positions" << endl;
 
       int NumThrowsCounter = 0;
 
-        for (int i_ND_LAr_vtx_pos = 0; i_ND_LAr_vtx_pos < vtxX->size(); i_ND_LAr_vtx_pos++ )
+        for (int i_ND_LAr_vtx_pos = 0; i_ND_LAr_vtx_pos < numOApos; i_ND_LAr_vtx_pos++ )
         {
-          Int_t hadEntry = vtxX->size()*i_iwritten+i_ND_LAr_vtx_pos; //because of how t_effValues is structured, we need to skip the previous events' entries in t_effValues, so we use this variable to do so.
+          /*because of how t_effValues is structured, we need to skip the previous events' entries in t_effValues 
+              (there are numOApos*i_iwritten previous entries to skip), so we use hadEntry to do so. */
+          Int_t hadEntry = numOApos*i_iwritten+i_ND_LAr_vtx_pos; 
           t_effValues->GetEntry(hadEntry);
 
           //cout<<" i_iwritten "<<i_iwritten<<" totEnergyFDatND_f " <<totEnergyFDatND_f<<endl;
 
-          int nthrowsToLoop = NPassedThrows; //this is going to be the validThrows
+          int nthrowsToLoop = NPassedThrows; //NPassedThrows is the number of throws that passed the hadron containment cut at this vertex
+          /* Use these lines to check looping if needed. 
+          cout << "   NumThrowsCounter = " << NumThrowsCounter << endl;
+          cout << "   nthrowsToLoop = " << nthrowsToLoop << endl; */
           for (Int_t ithrow = NumThrowsCounter; ithrow < nthrowsToLoop+NumThrowsCounter; ithrow++ ){ 
 	          ThrowInfo info;
 
-            if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
-                  cout<<" skipping this throw, Ehad = "<<TrimEnergyEventsPass->at(ithrow)*1E-3<<" GeV, > 20 GeV"<<endl;
+            if(TrimEnergyEventsPass->at(ithrow-NumThrowsCounter)*1E-3 > 20){
+                  cout<<" skipping this throw, Ehad = "<<TrimEnergyEventsPass->at(ithrow-NumThrowsCounter)*1E-3<<" GeV, > 20 GeV"<<endl;
                   continue;
                 }
+            
+            /* //Checks to ensure the correct values of Etrim and weightPmuon are used by checking indexes used. 
+            if(ithrow == NumThrowsCounter){
+              cout << "     first loop: " << endl;
+              cout << "         ithrow+1 = " << ithrow +1 << endl;
+              cout << "         ithrow-NumThrowsCounter = " << ithrow-NumThrowsCounter << endl;
+            }
+            if(ithrow == nthrowsToLoop+NumThrowsCounter-1){
+              cout << "     last loop: " << endl;
+              cout << "         ithrow+1 = " << ithrow +1 << endl;
+              cout << "         ithrow-NumThrowsCounter = " << ithrow-NumThrowsCounter << endl;
+            }
+            */
 
-            info.Etrim = TrimEnergyEventsPass->at(ithrow-NumThrowsCounter);  //save trimmed hadron energy per throw
-            info.Emu   = TotalLeptonMom[i_iwritten]*1E3;
-            info.weightPmuon = (*weightPmuon)[ithrow+1][0]; //The first entry in weightPmuon is empty, so we have to skip 1 entry to get to the correct one, hence the ithrow+1
-
+            info.Etrim = TrimEnergyEventsPass->at(ithrow-NumThrowsCounter);  //save trimmed hadron energy per throw (subtracting off NumThrowsCounter because we don't need to skip the previous events throws for TrimEnergyEventsPass (this comes from t_effValues))
+            info.Emu   = TotalLeptonMom[i_iwritten]*1E3;                     //Currently, we are using the true muon energy, so this is the same for every throw. Written here per throw for future iterations of code where reconstruction is available. 
+            info.weightPmuon = (*weightPmuon)[ithrow+1][0];                  //The first entry in weightPmuon is empty, so we have to skip 1 entry to get to the correct one, hence the ithrow+1
+          
             AllThrowInfo[i_iwritten][i_ND_LAr_vtx_pos].push_back(info);
 
           } //end throw
+          NumThrowsCounter += nthrowsToLoop;
+
         }// end vtx loop
     }//end iwritten
 
@@ -753,7 +772,11 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                    CoefficientsAtOAPos = CoefficientsHist->GetBinContent(CoefficientsHist->FindBin(OAPos));
                    CoefficientsAtOAPosHist->Fill(OAPos, CoefficientsAtOAPos);
                    WeightEventsAtOaPos = HistOAPos[i_iwritten]->GetBinContent(HistOAPos[i_iwritten]->FindBin(OAPos));
-
+                   if (OAPos > 0 && i_iwritten == 1) {
+                      cout << "Current Event Number: " << i_iwritten << endl;
+                      cout << "Current OAPos: " << OAPos << endl;
+                      cout << "WeightEventsAtOaPos: " << WeightEventsAtOaPos << endl;
+                    }
 
                    for (const auto& info : throwList) {
 
