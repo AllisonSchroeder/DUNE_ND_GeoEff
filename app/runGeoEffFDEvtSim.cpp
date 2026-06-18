@@ -1309,7 +1309,7 @@ int main(int argc, char** argv)
         // Do random throws regardless whether FD evt is contained in ND volume by setting a false flag
         hadron_throw_result = eff->getHadronContainmentThrows_FD_GEC(false); // Every 64 throw results stored into a 64 bit unsigned int: 0101101...
         //cout<<" hadron_thrw_result size: "<<hadron_throw_result.size()<<endl;
-        std::cout<<" vtx x: "<<i_vtx_vx<<endl;
+        //std::cout<<" vtx x: "<<i_vtx_vx<<endl;
         vetoEThrow = eff->getVetoEPerThrow_FD_GEC();//(hadron_throw_result);
         trimEThrow = eff->getTrimEPerThrow_FD_GEC();
 
