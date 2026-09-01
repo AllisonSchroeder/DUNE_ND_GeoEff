@@ -35,8 +35,11 @@ float ND_FV_max[] = { 200.,  100., 350.};
 // float FD_FV_min[] = {-240., -470., 130.};
 // float FD_FV_max[] = { 240.,  470., 1170.};
 // FV: 99% pass Eveto cut
-float FD_FV_min[] = {-145., -375., 100.};
-float FD_FV_max[] = { 145.,  375., 960.};
+//float FD_FV_min[] = {-145., -375., 100.};
+//float FD_FV_max[] = { 145., 375., 960.};
+//Allison Larger FV -> Match what is used in NearToFar
+float FD_FV_min[] = {-310., -550.,   50.};
+float FD_FV_max[] = { 310.,  550., 1244.};
 // float FD_FV_min[] = {-320., -550., 50.};
 // float FD_FV_max[] = { 320.,  550., 1250.};
 
