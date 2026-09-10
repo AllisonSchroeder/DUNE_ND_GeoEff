@@ -462,6 +462,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   std::vector<std::vector<std::vector<ThrowInfo>>> AllThrowInfo;
 
   double weightCAFLike[nFDEvents]; // this is going to be a weight similar to CAFs: if Edep/tracklength > 3 MeV / cm || trackLength <100 cmm then the muon is not reco -> Selected Mu =0 -> mu eff = 0;
+  double VisEtrue[nFDEvents];
 
   for (int i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
   { HistOAPos[i_iwritten] = new TH1D(Form("HistOAPos_FDEvt_%d", i_iwritten), Form("HistOAPos_FDEvt_%d", i_iwritten), 67, -30.5, 3);
@@ -487,6 +488,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
 		            // hist_EnuFDEnergy_Osc->Fill(ND_Gen_numu_E, calc->P(14,14,ND_Gen_numu_E));
             		//hist_TotalMuEnergy_Osc->Fill(LepMomTot, calc->P(14,14,ND_Gen_numu_E));
             		//hist_visEnuFDEnergy_Osc->Fill(ND_E_vis_true, calc->P(14,14,ND_Gen_numu_E));
+				VisEtrue[i_entry] = ND_E_vis_true - TotalSimNeutralPions * 0.134977 + 0.10566; //Add back in the muon mass to get the total lepton energy, and subtract pi0 mass to get only the KE
+                cout << "            VisEtrue = " << VisEtrue[i_entry] << endl;
             }
 
             if(ND_LAr_vtx_pos == -196.45) {//only want to fill the histos for 1 vtxX
@@ -617,7 +620,6 @@ void ProcessFile(TFile *fHad, TFile *fMu){
     TH2D* SelectedEventsVsOAPosVsTotalETrim[nFDEvents];
     
     //Setup Matrices for VisEtrue to Etrim (used to convert ND energy to FD Etrim Energy)
-    double VisEtrue;
     TH2D* EtrimVsEvisTrueNoWeights[nFDEvents];
     TH2D* EtrimVsEvisTrueWithPWeightMuon[nFDEvents];
     TH2D* EtrimVsEvisTrueWithNDEventRateWithLinComCoeffWithPWeightMuon[nFDEvents];
@@ -760,8 +762,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                //here loop over DetPos here -> for now just assume same efficiency at every det position..
                Int_t i_detpos = 0;
 
-               VisEtrue = ND_E_vis_true - TotalSimNeutralPions * 0.134977 + 0.10566; //Add back in the muon mass to get the total lepton energy, and subtract pi0 mass to get only the KE
-
+              
                for (Double_t i_ND_LAr_dtctr_pos: a_ND_off_axis_pos_vec)
                {
                    i_detpos+=1;
@@ -819,11 +820,11 @@ void ProcessFile(TFile *fHad, TFile *fMu){
                       SelectedEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 ,OAPos, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos)); //FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));//FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
                       AllThrownEventsVsOAPosVsTotalETrim[i_iwritten]->Fill((info.Etrim + info.Emu)/1000 , OAPos, double(validThrows)/throwList.size()* 1.0/WeightEventsAtOaPos * FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos)); //FDEventRateAtND_ETrue(cacheEtrue, EnuTrue[i_iwritten], OAPos));// FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
                       
-                      EtrimVsEvisTrueNoWeights[i_iwritten]->Fill(VisEtrue, (info.Etrim + info.Emu)/1000, 1.0/WeightEventsAtOaPos * weightCAFLike[i_iwritten]);
-                      EtrimVsEvisTrueWithPWeightMuon[i_iwritten]->Fill(VisEtrue, (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten]);
-                      EtrimVsEvisTrueWithNDEventRateWithLinComCoeffWithPWeightMuon[i_iwritten]->Fill(VisEtrue, (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * CoefficientsAtOAPos * FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
-                      EtrimVsEvisTrueWithNDEventRateWithPWeightMuon[i_iwritten]->Fill(VisEtrue, (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
-                      EtrimVsEvisTrueWithLinComCoeffWithPWeightMuon[i_iwritten]->Fill(VisEtrue, (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * CoefficientsAtOAPos);
+                      EtrimVsEvisTrueNoWeights[i_iwritten]->Fill(VisEtrue[i_written], (info.Etrim + info.Emu)/1000, 1.0/WeightEventsAtOaPos * weightCAFLike[i_iwritten]);
+                      EtrimVsEvisTrueWithPWeightMuon[i_iwritten]->Fill(VisEtrue[i_written], (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten]);
+                      EtrimVsEvisTrueWithNDEventRateWithLinComCoeffWithPWeightMuon[i_iwritten]->Fill(VisEtrue[i_written], (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * CoefficientsAtOAPos * FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+                      EtrimVsEvisTrueWithNDEventRateWithPWeightMuon[i_iwritten]->Fill(VisEtrue[i_written], (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * FDEventRateAtND(cacheLepHad, info.Etrim *1E-3 , info.Emu*1E-3, OAPos));
+                      EtrimVsEvisTrueWithLinComCoeffWithPWeightMuon[i_iwritten]->Fill(VisEtrue[i_written], (info.Etrim + info.Emu)/1000, info.weightPmuon* 1.0/WeightEventsAtOaPos  * weightCAFLike[i_iwritten] * CoefficientsAtOAPos);
 
 
                       //cout<<" rate "<< " Etrim " <<info.Etrim *1E-3<<" emu "<< info.Emu*1E-3<< "OApos " <<OAPos<<" rate: "<<FDEventRateAtND(cache, info.Etrim *1E-3 , info.Emu*1E-3, OAPos)<<endl;
