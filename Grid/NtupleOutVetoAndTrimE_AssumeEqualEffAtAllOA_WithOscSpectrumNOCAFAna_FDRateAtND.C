@@ -344,7 +344,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
   t_effValues->SetBranchAddress("totEnergyFDatND_f",   &totEnergyFDatND_f);
   t_effValues->SetBranchAddress("muonEdep_f",   &muonEdep_f);
   t_effValues->SetBranchAddress("muonTrackLength_f",   &muonTrackLength_f);
-  t_effValues->SetBranchAddress("TotalSimNeutralPions", &TotalSimNeutralPions);
+  t_effTree->SetBranchAddress("TotalSimNeutralPions", &TotalSimNeutralPions);
 
   double LepMomTot;
   vector<Double_t> *ND_LAr_dtctr_pos_vec = 0; // unit: cm, ND off-axis choices for each FD evt
