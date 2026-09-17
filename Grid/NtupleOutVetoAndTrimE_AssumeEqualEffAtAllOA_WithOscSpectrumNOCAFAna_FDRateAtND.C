@@ -591,6 +591,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
             AllThrowInfo[i_iwritten][i_ND_LAr_vtx_pos].push_back(info);
 
           } //end throw
+		  NumThrowsCounter += nthrowsToLoop;
         }// end vtx loop
     }//end iwritten
 
