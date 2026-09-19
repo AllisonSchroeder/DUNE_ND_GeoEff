@@ -579,8 +579,8 @@ void ProcessFile(TFile *fHad, TFile *fMu){
           for (Int_t ithrow = NumThrowsCounter; ithrow < nthrowsToLoop+NumThrowsCounter; ithrow++ ){ 
 	          ThrowInfo info;
 
-            if(TrimEnergyEventsPass->at(ithrow)*1E-3 > 20){
-                  cout<<" skipping this throw, Ehad = "<<TrimEnergyEventsPass->at(ithrow)*1E-3<<" GeV, > 20 GeV"<<endl;
+            if(TrimEnergyEventsPass->at(ithrow-NumThrowsCounter)*1E-3 > 20){
+                  cout<<" skipping this throw, Ehad = "<<TrimEnergyEventsPass->at(ithrow-NumThrowsCounter)*1E-3<<" GeV, > 20 GeV"<<endl;
                   continue;
                 }
 
