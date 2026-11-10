@@ -5,6 +5,7 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TH3D.h"
 #include "TGraph.h"
 #include "TSystem.h"
 #include "TVectorT.h"
