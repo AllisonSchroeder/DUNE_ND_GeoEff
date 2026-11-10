@@ -642,6 +642,17 @@ void ProcessFile(TFile *fHad, TFile *fMu){
     int nBinsEnergy = edges.size() - 1;
     double* EnergyEdges = edges.data();
 
+    //Set up binning for OAPos in TH3D
+    const int nBinsY = 65;
+    double yEdges[nBinsY + 1];
+    double yMin = -30.5;
+    double yMax = 2.0;
+    double binWidthY = (yMax - yMin) / nBinsY;
+
+    for (int j = 0; j <= nBinsY; ++j) {
+      yEdges[j] = yMin + j * binWidthY;
+    }
+
 
     for (Int_t i_iwritten = 0; i_iwritten<nFDEvents; i_iwritten++)
     {
@@ -680,7 +691,7 @@ void ProcessFile(TFile *fHad, TFile *fMu){
        TString NameSelectedEventsNoEvtRate = Form("SelectedEventsTwoDHisto_NoFDEvt_%d", i_iwritten);
        SelectedEventsVsOAPosVsTotalETrimNoEvtRate[i_iwritten] = new TH2D(NameSelectedEventsNoEvtRate, NameSelectedEventsNoEvtRate, nBinsEnergy, EnergyEdges, 65, -30.5, 2 );
        TString NameSelectedEventsVsEnuTrue = Form("SelectedEventsThreeDHisto_FDEvt_Etrim_EnuTrue_%d", i_iwritten);
-       SelectedEventsVsOAPosVsTrueNuEVsTotalEtrim[i_iwritten] = new TH3D(NameSelectedEventsVsEnuTrue, NameSelectedEventsVsEnuTrue, nBinsEnergy, EnergyEdges, 65, -30.5, 2, nBinsEnergy, EnergyEdges );
+       SelectedEventsVsOAPosVsTrueNuEVsTotalEtrim[i_iwritten] = new TH3D(NameSelectedEventsVsEnuTrue, NameSelectedEventsVsEnuTrue, nBinsEnergy, EnergyEdges, nBinsY, yEdges, nBinsEnergy, EnergyEdges );
 
        TString NameEtrimVsEvisTrueNoWeights = Form("EtrimVsEvisTrueNoWeights_%d", i_iwritten);
        EtrimVsEvisTrueNoWeights[i_iwritten] = new TH3D(NameEtrimVsEvisTrueNoWeights, NameEtrimVsEvisTrueNoWeights, nBinsEnergy, EnergyEdges, nBinsEnergy, EnergyEdges, nBinsEnergy, EnergyEdges );
