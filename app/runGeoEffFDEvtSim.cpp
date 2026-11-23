@@ -657,6 +657,7 @@ int main(int argc, char** argv)
   //Adding Tree to store FD vertex information for testing
   bool inFDFV;
   TTree * vertexFD = new TTree("vertexFD", "FD vertices");
+  vertexFD->Branch("inFDFV", &inFDFV);
   vertexFD->Branch("VtxXinFD", &FD_Sim_mu_start_vx);
   vertexFD->Branch("VtxYinFD", &FD_Sim_mu_start_vy);
   vertexFD->Branch("VtxZinFD", &FD_Sim_mu_start_vz);
