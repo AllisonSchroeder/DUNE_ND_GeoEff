@@ -655,6 +655,7 @@ int main(int argc, char** argv)
   ThrowsFD->Branch("throwRot",  &throwRot);
 
   //Adding Tree to store FD vertex information for testing
+  bool inFDFV;
   TTree * vertexFD = new TTree("vertexFD", "FD vertices");
   vertexFD->Branch("VtxXinFD", &FD_Sim_mu_start_vx);
   vertexFD->Branch("VtxYinFD", &FD_Sim_mu_start_vy);
@@ -779,6 +780,8 @@ int main(int argc, char** argv)
     if(FD_Sim_mu_start_vx > FD_FV_max[0] || FD_Sim_mu_start_vx < FD_FV_min[0] || 
 		FD_Sim_mu_start_vy > FD_FV_max[1] || FD_Sim_mu_start_vy < FD_FV_min[1] || 
 		FD_Sim_mu_start_vz > FD_FV_max[2] || FD_Sim_mu_start_vz < FD_FV_min[2]) {
+			inFDFV = false;
+			vertexFD->Fill();
 			continue;
 		}
 
@@ -787,9 +790,13 @@ int main(int argc, char** argv)
 		if (FD_Sim_mu_start_vx > excl_min[0] && FD_Sim_mu_start_vx < excl_max[0] &&
     		FD_Sim_mu_start_vy > excl_min[1] && FD_Sim_mu_start_vy < excl_max[1] &&
    			FD_Sim_mu_start_vz > excl_min[2] && FD_Sim_mu_start_vz < excl_max[2]) {
+				inFDFV = false;
+				vertexFD->Fill();
 				continue;
 		}
 	FD_FV_counter++;
+	inFDFV = true;
+	vertexFD->Fill();
     //
     // Calculate total hadron E in FD veto region
     //
@@ -1594,6 +1601,7 @@ int main(int argc, char** argv)
   ThrowsFD->Write();
   effTreeFD->Write();
   effValues->Write();
+  vertexFD->Write();
   effPosND->Fill();
   effPosND->Write();
   hist_vetoEnergyFD->Write();
