@@ -613,8 +613,8 @@ int main(int argc, char** argv)
   double muonTrackLength;
 
   TTree *effValues = new TTree("effValues", "ND eff Tree");
-  efalues->Branch("iwritten",                     &iwritten,             "iwritten/I");
-  efalues->Branch("ND_LAr_dtctr_pos",             &ND_LAr_dtctr_pos,     "ND_LAr_dtctr_pos/D");
+  effValues->Branch("iwritten",                     &iwritten,             "iwritten/I");
+  effValues->Branch("ND_LAr_dtctr_pos",             &ND_LAr_dtctr_pos,     "ND_LAr_dtctr_pos/D");
   effValues->Branch("ND_LAr_vtx_pos",               &ND_LAr_vtx_pos,       "ND_LAr_vtx_pos/D");
   effValues->Branch("ND_GeoEff",                    &ND_GeoEff,            "ND_GeoEff/D");
   effValues->Branch("vetoEnergyFDatND_f",           &vetoEnergyFDatND_float,           "vetoEnergyFDatND_float/F");
@@ -655,7 +655,6 @@ int main(int argc, char** argv)
   ThrowsFD->Branch("throwRot",  &throwRot);
 
   //Adding Tree to store FD vertex information for testing
-  bool inFDFV;
   TTree * vertexFD = new TTree("vertexFD", "FD vertices");
   vertexFD->Branch("VtxXinFD", &FD_Sim_mu_start_vx);
   vertexFD->Branch("VtxYinFD", &FD_Sim_mu_start_vy);
