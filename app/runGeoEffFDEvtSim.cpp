@@ -613,8 +613,8 @@ int main(int argc, char** argv)
   double muonTrackLength;
 
   TTree *effValues = new TTree("effValues", "ND eff Tree");
-  effValues->Branch("iwritten",                     &iwritten,             "iwritten/I");
-  effValues->Branch("ND_LAr_dtctr_pos",             &ND_LAr_dtctr_pos,     "ND_LAr_dtctr_pos/D");
+  efalues->Branch("iwritten",                     &iwritten,             "iwritten/I");
+  efalues->Branch("ND_LAr_dtctr_pos",             &ND_LAr_dtctr_pos,     "ND_LAr_dtctr_pos/D");
   effValues->Branch("ND_LAr_vtx_pos",               &ND_LAr_vtx_pos,       "ND_LAr_vtx_pos/D");
   effValues->Branch("ND_GeoEff",                    &ND_GeoEff,            "ND_GeoEff/D");
   effValues->Branch("vetoEnergyFDatND_f",           &vetoEnergyFDatND_float,           "vetoEnergyFDatND_float/F");
@@ -653,6 +653,13 @@ int main(int argc, char** argv)
   ThrowsFD->Branch("throwVtxY", &throwVtxY); // vector<float>: entries = [ (int)(written evts / 100) + 1 ] * N_throws
   ThrowsFD->Branch("throwVtxZ", &throwVtxZ);
   ThrowsFD->Branch("throwRot",  &throwRot);
+
+  //Adding Tree to store FD vertex information for testing
+  bool inFDFV;
+  TTree * vertexFD = new TTree("vertexFD", "FD vertices");
+  vertexFD->Branch("VtxXinFD", &FD_Sim_mu_start_vx);
+  vertexFD->Branch("VtxYinFD", &FD_Sim_mu_start_vy);
+  vertexFD->Branch("VtxZinFD", &FD_Sim_mu_start_vz);
 
   // Mean neutrino production point (beam coordinate) on z axis as a function of ND off-axis position
   TGraph* gDecayZ = new TGraph(27, OffAxisPoints, meanPDPZ);
@@ -770,8 +777,20 @@ int main(int argc, char** argv)
     // if ( FD_neuPDG != 14 ) continue;       // only use muon nu as interacting nu for FHC mode
     if ( FD_LepPDG != 13 ) continue;       // only use muon as final state lep
     // Only pick the events' vertex inside the FD FV
-    if(FD_Sim_mu_start_vx > FD_FV_max[0] || FD_Sim_mu_start_vx < FD_FV_min[0] || FD_Sim_mu_start_vy > FD_FV_max[1] || FD_Sim_mu_start_vy < FD_FV_min[1] || FD_Sim_mu_start_vz > FD_FV_max[2] || FD_Sim_mu_start_vz < FD_FV_min[2]) continue;
-    FD_FV_counter++;
+    if(FD_Sim_mu_start_vx > FD_FV_max[0] || FD_Sim_mu_start_vx < FD_FV_min[0] || 
+		FD_Sim_mu_start_vy > FD_FV_max[1] || FD_Sim_mu_start_vy < FD_FV_min[1] || 
+		FD_Sim_mu_start_vz > FD_FV_max[2] || FD_Sim_mu_start_vz < FD_FV_min[2]) {
+			continue;
+		}
+
+	// Allison's test to understand if futher out events are worse
+		// Skip if inside excluded sub-region
+		if (FD_Sim_mu_start_vx > excl_min[0] && FD_Sim_mu_start_vx < excl_max[0] &&
+    		FD_Sim_mu_start_vy > excl_min[1] && FD_Sim_mu_start_vy < excl_max[1] &&
+   			FD_Sim_mu_start_vz > excl_min[2] && FD_Sim_mu_start_vz < excl_max[2]) {
+				continue;
+		}
+	FD_FV_counter++;
     //
     // Calculate total hadron E in FD veto region
     //
