@@ -42,6 +42,9 @@ float FD_FV_min[] = {-310., -550.,   50.};
 float FD_FV_max[] = { 310.,  550., 1244.};
 // float FD_FV_min[] = {-320., -550., 50.};
 // float FD_FV_max[] = { 320.,  550., 1250.};
+//Allison Test events located futher out in FV: 
+float excl_min[] = {-260., -500., 100.};
+float excl_max[] = {260., 500., 1194.};
 
 
 bool random_ND_off_axis_pos     = false; // Set to true will only use a random ND off axis position per event in runGeoEffFDEvtSim
