@@ -38,13 +38,17 @@ float ND_FV_max[] = { 200.,  100., 350.};
 //float FD_FV_min[] = {-145., -375., 100.};
 //float FD_FV_max[] = { 145., 375., 960.};
 //Allison Larger FV -> Match what is used in NearToFar
-float FD_FV_min[] = {-310., -550.,   50.};
-float FD_FV_max[] = { 310.,  550., 1244.};
+//float FD_FV_min[] = {-310., -550.,   50.};
+//float FD_FV_max[] = { 310.,  550., 1244.};
+//Allison Picking events outside the Near to Far FV:
+float FD_FV_min[] = {-370., -600.,    0.};
+float FD_FV_max[] = {370.,   600., 1400.};
+
+//Allison Test events located futher out in FV: 
+float excl_min[] = {-310., -550.,   50.};//float excl_min[] = {-260., -500., 100.};
+float excl_max[] = { 310.,  550., 1244.};//float excl_max[] = {260., 500., 1194.};
 // float FD_FV_min[] = {-320., -550., 50.};
 // float FD_FV_max[] = { 320.,  550., 1250.};
-//Allison Test events located futher out in FV: 
-float excl_min[] = {-260., -500., 100.};
-float excl_max[] = {260., 500., 1194.};
 
 
 bool random_ND_off_axis_pos     = false; // Set to true will only use a random ND off axis position per event in runGeoEffFDEvtSim
